@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import OrderCard from '@/components/OrderCard';
-import type { Order, OrderStatus } from '@/types/order';
-import { orderList } from '@/data/orders';
+import type { Order } from '@/types/order';
+import { getOrders } from '@/store/index';
 
 const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  useEffect(() => {
-    loadOrders();
+  const loadOrders = useCallback(() => {
+    console.log('[Orders] 加载订单数据');
+    setOrders(getOrders());
   }, []);
 
-  const loadOrders = () => {
-    console.log('[Orders] 加载订单数据');
-    setOrders(orderList);
-  };
+  useDidShow(() => {
+    loadOrders();
+  });
 
   const tabs = [
     { key: 'all', label: '全部' },

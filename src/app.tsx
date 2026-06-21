@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
 import { useDidShow, useDidHide } from '@tarojs/taro';
-// 全局样式
+import { initStore } from '@/store/index';
+import { craneList } from '@/data/cranes';
+import { scheduleList } from '@/data/schedules';
+import { orderList } from '@/data/orders';
 import './app.scss';
 
 function App(props) {
-  // 可以使用所有的 React Hooks
-  useEffect(() => {});
+  useEffect(() => {
+    initStore(craneList, scheduleList, orderList);
+  }, []);
 
-  // 对应 onShow
   useDidShow(() => {});
 
-  // 对应 onHide
   useDidHide(() => {});
 
   return props.children;

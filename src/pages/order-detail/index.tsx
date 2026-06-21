@@ -6,8 +6,7 @@ import classnames from 'classnames';
 import StatusTag from '@/components/StatusTag';
 import type { Order } from '@/types/order';
 import type { Crane } from '@/types/crane';
-import { getOrderById } from '@/data/orders';
-import { getCraneById } from '@/data/cranes';
+import { getOrderById, getCraneById, settleOrder } from '@/store/index';
 import { orderStatusLabel, settlementStatusLabel } from '@/types/order';
 import { formatDate, formatDateTime } from '@/utils/date';
 
@@ -36,12 +35,19 @@ const OrderDetailPage: React.FC = () => {
   };
 
   const handleSettle = () => {
+    if (!order) return;
     Taro.showModal({
       title: '确认结算',
-      content: `确认结算该订单，金额 ¥${order?.totalAmount.toLocaleString()}？`,
+      content: `确认结算该订单，金额 ¥${order.totalAmount.toLocaleString()}？`,
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '结算成功', icon: 'success' });
+          const updated = settleOrder(order.id);
+          if (updated) {
+            setOrder(updated);
+            Taro.showToast({ title: '结算成功', icon: 'success' });
+          } else {
+            Taro.showToast({ title: '结算失败', icon: 'error' });
+          }
         }
       }
     });

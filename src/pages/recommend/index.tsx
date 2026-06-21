@@ -1,26 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Input } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import CraneCard from '@/components/CraneCard';
 import type { RecommendItem, WeightConfig } from '@/types/recommend';
-import { craneList } from '@/data/cranes';
-import { defaultWeightConfig, weightPresets } from '@/data/recommend';
+import { weightPresets } from '@/data/recommend';
 import { getRecommendedCranes } from '@/utils/recommend';
+import { getCranes, getWeightConfig } from '@/store/index';
 
 const RecommendPage: React.FC = () => {
   const [siteName, setSiteName] = useState('光谷中心城项目');
   const [siteAddress, setSiteAddress] = useState('武汉市洪山区光谷大道');
-  const [requiredTonnage, setRequiredTonnage] = useState('50');
+  const [requiredTonnage, setRequiredTonnage] = useState('');
   const [preferredType, setPreferredType] = useState<string>('truck');
-  const [weightConfig, setWeightConfig] = useState<WeightConfig>(defaultWeightConfig);
+  const [weightConfig, setWeightConfig] = useState<WeightConfig>(getWeightConfig());
   const [recommendations, setRecommendations] = useState<RecommendItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    doRecommend();
-  }, []);
+  useDidShow(() => {
+    const saved = getWeightConfig();
+    setWeightConfig(saved);
+  });
 
   const craneTypes = [
     { key: 'truck', label: '汽车吊' },
@@ -30,8 +31,19 @@ const RecommendPage: React.FC = () => {
   ];
 
   const doRecommend = () => {
-    console.log('[Recommend] 执行智能推荐');
-    const tonnage = parseInt(requiredTonnage) || 50;
+    const trimmed = requiredTonnage.trim();
+    if (!trimmed) {
+      Taro.showToast({ title: '请输入需求吨位', icon: 'none' });
+      return;
+    }
+    const tonnage = Number(trimmed);
+    if (!Number.isFinite(tonnage) || tonnage <= 0 || !Number.isInteger(tonnage)) {
+      Taro.showToast({ title: '吨位必须为正整数，请重新输入', icon: 'none' });
+      return;
+    }
+
+    console.log('[Recommend] 执行智能推荐，吨位:', tonnage);
+    const craneList = getCranes();
     const request = {
       siteName,
       siteAddress,
@@ -45,7 +57,6 @@ const RecommendPage: React.FC = () => {
     const results = getRecommendedCranes(craneList, request, weightConfig, 5);
     setRecommendations(results);
     setHasSearched(true);
-
     console.log('[Recommend] 推荐结果数量:', results.length);
   };
 
@@ -56,8 +67,16 @@ const RecommendPage: React.FC = () => {
   };
 
   const gotoRecommendDetail = (item: RecommendItem) => {
+    const tonnage = Number(requiredTonnage.trim()) || 0;
+    const params = [
+      `craneId=${item.crane.id}`,
+      `tonnage=${tonnage}`,
+      `preferredType=${preferredType}`,
+      `siteName=${encodeURIComponent(siteName)}`,
+      `siteAddress=${encodeURIComponent(siteAddress)}`
+    ].join('&');
     Taro.navigateTo({
-      url: `/pages/recommend-detail/index?craneId=${item.crane.id}&score=${item.score}`
+      url: `/pages/recommend-detail/index?${params}`
     });
   };
 
@@ -103,20 +122,15 @@ const RecommendPage: React.FC = () => {
             />
           </View>
 
-          <View className={styles.formRow}>
-            <View className={styles.formItem}>
-              <Text className={styles.formLabel}>需求吨位(吨)</Text>
-              <Input
-                className={styles.formInput}
-                type="number"
-                placeholder="请输入吨位"
-                value={requiredTonnage}
-                onInput={(e) => setRequiredTonnage(e.detail.value)}
-              />
-            </View>
-            <View className={styles.formItem}>
-              <Text className={styles.formLabel}>首选机型</Text>
-            </View>
+          <View className={styles.formGroup}>
+            <Text className={styles.formLabel}>需求吨位(吨)</Text>
+            <Input
+              className={styles.formInput}
+              type="number"
+              placeholder="请输入正整数吨位，如 50"
+              value={requiredTonnage}
+              onInput={(e) => setRequiredTonnage(e.detail.value)}
+            />
           </View>
 
           <View className={styles.formGroup}>
