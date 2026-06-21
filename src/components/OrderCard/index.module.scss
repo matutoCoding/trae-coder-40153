@@ -1,0 +1,112 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.orderNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.body {
+  margin-bottom: $spacing-md;
+}
+
+.siteName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.siteAddress {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-md;
+  @include text-ellipsis;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.infoValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.settlementBox {
+  display: flex;
+  align-items: center;
+}
+
+.priceBox {
+  display: flex;
+  align-items: baseline;
+}
+
+.priceLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-right: $spacing-xs;
+}
+
+.priceSymbol {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+.priceValue {
+  font-size: $font-size-xl;
+  color: $color-error;
+  font-weight: $font-weight-bold;
+}

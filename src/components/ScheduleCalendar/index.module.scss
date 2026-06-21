@@ -1,0 +1,133 @@
+@use '@/styles/variables.scss' as *;
+
+.calendar {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+}
+
+.navBtn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  background: $color-primary-bg;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.navText {
+  font-size: 40rpx;
+  color: $color-primary;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.weekDays {
+  display: flex;
+  margin-bottom: $spacing-sm;
+}
+
+.weekDay {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm 0;
+}
+
+.weekDayText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.daysGrid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dayCell {
+  width: 14.285%;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.dayText {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.otherMonth {
+  .dayText {
+    color: $color-text-disabled;
+  }
+}
+
+.otherMonthText {
+  color: $color-text-disabled !important;
+}
+
+.today {
+  .dayText {
+    color: $color-primary;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.todayText {
+  color: $color-primary !important;
+  font-weight: $font-weight-bold !important;
+}
+
+.selected {
+  background: $color-primary;
+  border-radius: $radius-md;
+
+  .dayText {
+    color: $color-text-white;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.selectedText {
+  color: $color-text-white !important;
+  font-weight: $font-weight-bold !important;
+}
+
+.scheduleDots {
+  display: flex;
+  gap: 4rpx;
+  margin-top: 6rpx;
+}
+
+.dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+}

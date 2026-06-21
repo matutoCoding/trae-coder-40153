@@ -1,0 +1,256 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 160rpx;
+}
+
+.header {
+  background: $gradient-primary;
+  padding: $spacing-xl $page-padding 64rpx;
+  text-align: center;
+}
+
+.orderStatus {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: $spacing-xs;
+}
+
+.orderNo {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.content {
+  padding: 0 $page-padding;
+  margin-top: -24rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.infoCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.cardTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &::before {
+    content: '';
+    width: 6rpx;
+    height: 28rpx;
+    background: $color-primary;
+    border-radius: 3rpx;
+  }
+}
+
+.siteInfo {
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+  margin-bottom: $spacing-md;
+}
+
+.siteName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.siteAddress {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.infoRow {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  width: 160rpx;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex: 1;
+}
+
+.craneBox {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+}
+
+.craneImage {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.craneInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.craneName {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.craneSpec {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.cranePrice {
+  font-size: $font-size-md;
+  color: $color-error;
+  font-weight: $font-weight-semibold;
+}
+
+.priceDetail {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-top: $spacing-sm;
+    border-top: 1rpx dashed $color-border;
+    margin-top: $spacing-sm;
+  }
+}
+
+.priceLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.priceValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  &.highlight {
+    color: $color-error;
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-lg;
+  }
+}
+
+.settlementTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.unsettled {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.settled {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-success;
+  }
+
+  &.partial {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: $spacing-md;
+}
+
+.btnSecondary {
+  @include button-reset;
+  flex: 1;
+  height: 88rpx;
+  border-radius: $radius-button;
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  border: 1rpx solid $color-border;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.btnPrimary {
+  @include button-reset;
+  flex: 2;
+  height: 88rpx;
+  border-radius: $radius-button;
+  background: $gradient-primary;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.btnSuccess {
+  @include button-reset;
+  flex: 2;
+  height: 88rpx;
+  border-radius: $radius-button;
+  background: $gradient-success;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &:active {
+    opacity: 0.9;
+  }
+}

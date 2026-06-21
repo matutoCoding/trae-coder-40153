@@ -1,0 +1,38 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.score {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.barBg {
+  width: 100%;
+  background-color: $color-divider;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.barFill {
+  border-radius: $radius-round;
+  transition: width $transition-base ease;
+}

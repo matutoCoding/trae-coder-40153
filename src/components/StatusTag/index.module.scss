@@ -1,0 +1,31 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  white-space: nowrap;
+
+  &.small {
+    height: 36rpx;
+    padding: 0 12rpx;
+    font-size: $font-size-xs;
+  }
+
+  &.medium {
+    height: 44rpx;
+    padding: 0 16rpx;
+    font-size: $font-size-sm;
+  }
+
+  &.large {
+    height: 52rpx;
+    padding: 0 20rpx;
+    font-size: $font-size-md;
+  }
+}
+
+.text {
+  font-weight: $font-weight-medium;
+}

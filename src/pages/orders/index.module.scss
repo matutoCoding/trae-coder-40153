@@ -1,0 +1,167 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 40rpx;
+}
+
+.header {
+  background: $gradient-primary;
+  padding: $spacing-lg $page-padding 48rpx;
+  border-bottom-left-radius: 32rpx;
+  border-bottom-right-radius: 32rpx;
+}
+
+.statsRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.statItem {
+  flex: 1;
+  text-align: center;
+
+  &:not(:last-child) {
+    border-right: 1rpx solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+.statValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: $spacing-xs;
+}
+
+.amountBox {
+  margin-top: $spacing-lg;
+  padding: $spacing-lg;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-lg;
+  text-align: center;
+}
+
+.amountLabel {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: $spacing-xs;
+}
+
+.amountValue {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.amountSymbol {
+  font-size: $font-size-lg;
+  margin-right: 4rpx;
+}
+
+.content {
+  padding: 0 $page-padding;
+  margin-top: -24rpx;
+}
+
+.filterTabs {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.filterTab {
+  @include button-reset;
+  flex: 1;
+  height: 72rpx;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xl * 2 0;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.summaryCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.summaryTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-top: $spacing-sm;
+    border-top: 1rpx solid $color-divider;
+  }
+}
+
+.summaryLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.summaryValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  &.highlight {
+    color: $color-error;
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-md;
+  }
+}

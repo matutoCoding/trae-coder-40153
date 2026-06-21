@@ -1,0 +1,133 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  position: relative;
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.rankBadge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8rpx 16rpx;
+  border-bottom-right-radius: $radius-lg;
+  z-index: 10;
+}
+
+.rankText {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-weight: $font-weight-bold;
+}
+
+.image {
+  width: 200rpx;
+  height: 200rpx;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  flex: 1;
+  margin-right: $spacing-sm;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+  flex-wrap: wrap;
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-right: $spacing-xs;
+}
+
+.infoValue {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-right: $spacing-md;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: $spacing-sm;
+}
+
+.priceBox {
+  display: flex;
+  align-items: baseline;
+}
+
+.priceSymbol {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+.priceValue {
+  font-size: $font-size-lg;
+  color: $color-error;
+  font-weight: $font-weight-bold;
+}
+
+.priceUnit {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-left: 4rpx;
+}
+
+.scoreBox {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.scoreLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.scoreValue {
+  font-size: $font-size-lg;
+  color: $color-primary;
+  font-weight: $font-weight-bold;
+}
+
+.distance {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

@@ -1,0 +1,43 @@
+// ============================================
+// 主题配色变量（吊车租赁调度App - 工业科技风）
+// ============================================
+
+// 品牌主题色：工业蓝
+$color-primary: #1E5EFA;
+$color-primary-light: #4D85FF;
+$color-primary-dark: #1548C7;
+$color-primary-bg: rgba(30, 94, 250, 0.08);
+
+// 功能色
+$color-success: #00B42A;
+$color-warning: #FF7D00;
+$color-error: #F53F3F;
+$color-info: #1E5EFA;
+
+// 业务色
+$color-available: #00B42A;
+$color-occupied: #F53F3F;
+$color-pending: #FF7D00;
+$color-merged: #722ED1;
+
+// 背景色
+$color-bg-page: #F5F7FA;
+$color-bg-card: #FFFFFF;
+$color-bg-hover: #F2F3F5;
+$color-bg-dark: #1D2129;
+
+// 文本色
+$color-text-primary: #1D2129;
+$color-text-secondary: #4E5969;
+$color-text-tertiary: #86909C;
+$color-text-disabled: #C9CDD4;
+$color-text-white: #FFFFFF;
+
+// 边框色
+$color-border: #E5E6EB;
+$color-divider: #F2F3F5;
+
+// 渐变色
+$gradient-primary: linear-gradient(135deg, #1E5EFA 0%, #4D85FF 100%);
+$gradient-success: linear-gradient(135deg, #00B42A 0%, #23C343 100%);
+$gradient-warning: linear-gradient(135deg, #FF7D00 0%, #FF9A2E 100%);

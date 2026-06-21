@@ -1,0 +1,31 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.label {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.value {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+}
+
+.sliderWrapper {
+  padding: 0 $spacing-xs;
+}
