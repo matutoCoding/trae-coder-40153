@@ -443,6 +443,14 @@
   color: $color-text-primary;
 }
 
+.conflictStatusTag {
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+}
+
 .conflictDesc {
   font-size: $font-size-sm;
   color: $color-text-secondary;
@@ -482,5 +490,31 @@
 
   &:active {
     opacity: 0.9;
+  }
+}
+
+.conflictHandleRow {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.conflictHandleBtn {
+  @include button-reset;
+  flex: 1;
+  height: 64rpx;
+  border-radius: $radius-button;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: 24rpx;
+  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.85;
   }
 }

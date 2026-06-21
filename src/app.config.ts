@@ -7,7 +7,8 @@ export default defineAppConfig({
     'pages/crane-detail/index',
     'pages/recommend-detail/index',
     'pages/order-detail/index',
-    'pages/weight-config/index'
+    'pages/weight-config/index',
+    'pages/dashboard/index'
   ],
   window: {
     backgroundTextStyle: 'light',

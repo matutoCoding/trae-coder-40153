@@ -70,7 +70,7 @@ const OrderDetailPage: React.FC = () => {
 
     let updated;
     if (amount >= remainingAmount - 0.01) {
-      updated = settleOrder(order.id);
+      updated = settleOrder(order.id, settleRemark.trim() || undefined);
     } else {
       updated = partialSettleOrder(order.id, amount, settleRemark.trim());
     }
@@ -283,6 +283,12 @@ const OrderDetailPage: React.FC = () => {
                 </View>
               )}
             </View>
+            {order.recommendTrace.recommendTime && (
+              <View className={styles.infoRow}>
+                <Text className={styles.infoLabel}>推荐时间</Text>
+                <Text className={styles.infoValue}>{order.recommendTrace.recommendTime}</Text>
+              </View>
+            )}
             <View className={styles.infoRow}>
               <Text className={styles.infoLabel}>需求吨位</Text>
               <Text className={styles.infoValue}>{order.recommendTrace.requiredTonnage} 吨</Text>
@@ -291,6 +297,36 @@ const OrderDetailPage: React.FC = () => {
               <Text className={styles.infoLabel}>首选机型</Text>
               <Text className={styles.infoValue}>{order.recommendTrace.preferredType}</Text>
             </View>
+
+            {order.recommendTrace.candidates && order.recommendTrace.candidates.length > 0 && (
+              <View className={styles.traceCandidates}>
+                <Text className={styles.traceCandidatesLabel}>当时候选吊车</Text>
+                <View className={styles.candidateList}>
+                  {order.recommendTrace.candidates.map(c => (
+                    <View key={c.craneId} className={styles.candidateItem}>
+                      <View className={styles.candidateRank}>
+                        <Text className={styles.candidateRankText}>#{c.rank}</Text>
+                      </View>
+                      <View className={styles.candidateInfo}>
+                        <Text className={styles.candidateName}>{c.craneName}</Text>
+                        <Text className={styles.candidateSpec}>{c.tonnage}吨 · ¥{c.dailyRate}/台班</Text>
+                      </View>
+                      <View className={styles.candidateScore}>
+                        <Text className={styles.candidateScoreText}>{c.score}分</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {order.recommendTrace.selectionReason && (
+              <View className={styles.infoRow}>
+                <Text className={styles.infoLabel}>选择理由</Text>
+                <Text className={styles.infoValue}>{order.recommendTrace.selectionReason}</Text>
+              </View>
+            )}
+
             <View className={styles.traceWeights}>
               <Text className={styles.traceWeightsLabel}>当时权重配置</Text>
               <View className={styles.traceWeightList}>

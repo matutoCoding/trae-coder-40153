@@ -1,6 +1,6 @@
 import type { Crane } from './crane';
 import type { ScheduleItem } from './schedule';
-import type { WeightConfig } from './recommend';
+import type { WeightConfig, RecommendItem } from './recommend';
 
 export interface RecommendTrace {
   score: number;
@@ -9,6 +9,17 @@ export interface RecommendTrace {
   preferredType: string;
   weightConfig: WeightConfig;
   rank?: number;
+  recommendTime?: string;
+  candidates?: Array<{
+    craneId: string;
+    craneName: string;
+    tonnage: number;
+    score: number;
+    rank: number;
+    matchLevel: 'perfect' | 'good' | 'normal' | 'low';
+    dailyRate: number;
+  }>;
+  selectionReason?: string;
 }
 
 export interface Order {

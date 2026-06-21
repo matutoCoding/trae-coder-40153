@@ -1,0 +1,350 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: $gradient-primary;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+  color: $color-text-white;
+}
+
+.headerTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.periodToggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-button;
+  padding: 4rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.periodBtn {
+  @include button-reset;
+  padding: $spacing-sm $spacing-xl;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.periodActive {
+  background: $color-text-white;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.periodRange {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.7);
+  display: block;
+}
+
+.scrollView {
+  flex: 1;
+  margin-top: -40rpx;
+  padding: 0 $spacing-md;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.statCard {
+  background: $color-bg-card;
+  border-radius: $radius-card;
+  padding: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.statIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statIconText {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.statContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.statValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.sectionCard {
+  background: $color-bg-card;
+  border-radius: $radius-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+
+  &:active {
+    opacity: 0.95;
+  }
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.sectionArrow {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.amountBar {
+  margin-top: $spacing-sm;
+}
+
+.amountTrack {
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: $color-bg-page;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+}
+
+.amountFill {
+  height: 100%;
+  background: $gradient-success;
+  border-radius: 8rpx;
+  transition: width 0.3s ease;
+}
+
+.amountLegend {
+  display: flex;
+  gap: $spacing-xl;
+  margin-bottom: $spacing-sm;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.collectionRate {
+  font-size: $font-size-md;
+  color: $color-success;
+  font-weight: $font-weight-semibold;
+  display: block;
+  text-align: right;
+}
+
+.riskRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.riskItem {
+  flex: 1;
+  text-align: center;
+}
+
+.riskValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+  line-height: 1.2;
+}
+
+.riskLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: $spacing-xs;
+}
+
+.riskList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.riskCard {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  background: $color-bg-page;
+  border-radius: $radius-card;
+}
+
+.riskLevelTag {
+  padding: 4rpx 16rpx;
+  border-radius: 6rpx;
+  color: $color-text-white;
+  font-size: 22rpx;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+  height: fit-content;
+}
+
+.riskInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.riskTitle {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: block;
+}
+
+.riskDesc {
+  font-size: 24rpx;
+  color: $color-text-secondary;
+  display: block;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.craneStats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+}
+
+.craneStatItem {
+  flex: 1;
+  text-align: center;
+}
+
+.craneStatValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.craneStatLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.utilizationBar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.utilizationLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+  width: 120rpx;
+}
+
+.utilizationTrack {
+  flex: 1;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: $color-bg-page;
+  overflow: hidden;
+}
+
+.utilizationFill {
+  height: 100%;
+  background: $gradient-primary;
+  border-radius: 8rpx;
+  transition: width 0.3s ease;
+}
+
+.utilizationValue {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+  width: 80rpx;
+  text-align: right;
+}
+
+.bottomSpace {
+  height: 120rpx;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  text-align: center;
+  padding: $spacing-lg 0;
+}

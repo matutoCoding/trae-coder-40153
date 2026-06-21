@@ -14,6 +14,15 @@ const RecommendDetailPage: React.FC = () => {
   const router = useRouter();
   const [crane, setCrane] = useState<Crane | null>(null);
   const [recommendItem, setRecommendItem] = useState<RecommendItem | null>(null);
+  const [topCandidates, setTopCandidates] = useState<Array<{
+    craneId: string;
+    craneName: string;
+    tonnage: number;
+    score: number;
+    rank: number;
+    matchLevel: 'perfect' | 'good' | 'normal' | 'low';
+    dailyRate: number;
+  }>>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [formDays, setFormDays] = useState('3');
   const [formContact, setFormContact] = useState('张工');
@@ -65,6 +74,17 @@ const RecommendDetailPage: React.FC = () => {
       const currentIdx = allResults.findIndex(r => r.crane.id === craneId);
       const realRank = currentIdx >= 0 ? currentIdx + 1 : requestParams.initialRank;
 
+      const top5 = allResults.slice(0, 5).map((r, i) => ({
+        craneId: r.crane.id,
+        craneName: r.crane.name,
+        tonnage: r.crane.tonnage,
+        score: r.score,
+        rank: i + 1,
+        matchLevel: r.matchLevel,
+        dailyRate: r.crane.dailyRate
+      }));
+      setTopCandidates(top5);
+
       setRecommendItem({
         ...result,
         rank: realRank
@@ -102,6 +122,8 @@ const RecommendDetailPage: React.FC = () => {
     const now = dayjs();
     const endDate = now.add(days - 1, 'day').hour(18).minute(0);
 
+    const selectionReason = `综合评分第 ${recommendItem?.rank || 1} 名，${matchLevelLabel[recommendItem?.matchLevel || 'normal']}，${requestParams.requiredTonnage}吨需求匹配度高`;
+
     const result = createOrderFromMatch({
       craneId: crane.id,
       siteName: requestParams.siteName,
@@ -118,7 +140,10 @@ const RecommendDetailPage: React.FC = () => {
       preferredType: requestParams.preferredType,
       recommendScore: recommendItem?.score || 0,
       matchLevel: recommendItem?.matchLevel || 'normal',
-      recommendRank: recommendItem?.rank
+      recommendRank: recommendItem?.rank,
+      recommendTime: now.format('YYYY-MM-DD HH:mm'),
+      candidates: topCandidates,
+      selectionReason
     });
 
     Taro.showToast({ title: '撮合成功', icon: 'success' });

@@ -6,7 +6,7 @@ import ScheduleCalendar from '@/components/ScheduleCalendar';
 import StatusTag from '@/components/StatusTag';
 import type { ScheduleItem, ScheduleConflict } from '@/types/schedule';
 import { scheduleStatusLabel } from '@/types/schedule';
-import { getSchedules, getCraneById, getCranes, mergeSchedulesForCrane, splitSchedule, getScheduleConflicts, getOrderById } from '@/store/index';
+import { getSchedules, getCraneById, getCranes, mergeSchedulesForCrane, splitSchedule, getScheduleConflicts, getOrderById, markConflictStatus } from '@/store/index';
 import { formatDate, formatTime, isToday } from '@/utils/date';
 import dayjs from 'dayjs';
 
@@ -232,8 +232,9 @@ const SchedulePage: React.FC = () => {
   };
 
   const handleConflictClick = () => {
-    if (conflicts.length === 0) {
-      Taro.showToast({ title: '暂无排期冲突', icon: 'none' });
+    const pendingCount = conflicts.filter(c => c.status === 'pending').length;
+    if (pendingCount === 0) {
+      Taro.showToast({ title: '暂无待处理冲突', icon: 'none' });
       return;
     }
     setShowConflicts(true);
@@ -249,6 +250,26 @@ const SchedulePage: React.FC = () => {
     high: '#F53F3F',
     medium: '#FF7D00',
     low: '#FFAA00'
+  };
+
+  const conflictStatusLabel: Record<string, string> = {
+    pending: '待处理',
+    confirmed: '已确认',
+    resolved: '已处理',
+    ignored: '暂不处理'
+  };
+
+  const conflictStatusColor: Record<string, string> = {
+    pending: '#F53F3F',
+    confirmed: '#FF7D00',
+    resolved: '#00B42A',
+    ignored: '#86909C'
+  };
+
+  const handleMarkConflict = (conflictId: string, status: 'confirmed' | 'resolved' | 'ignored') => {
+    markConflictStatus(conflictId, status);
+    setConflicts(getScheduleConflicts());
+    Taro.showToast({ title: '操作成功', icon: 'success' });
   };
 
   const statusTypeMap: Record<string, 'success' | 'error' | 'warning' | 'info' | 'primary'> = {
@@ -288,7 +309,7 @@ const SchedulePage: React.FC = () => {
             <Text>筛选: {filterLabel}</Text>
           </View>
           <View className={styles.conflictBtn} onClick={handleConflictClick}>
-            <Text>冲突提醒{conflicts.length > 0 ? ` (${conflicts.length})` : ''}</Text>
+            <Text>冲突提醒({conflicts.filter(c => c.status === 'pending').length})</Text>
           </View>
         </View>
         <View className={styles.quickActions}>
@@ -297,6 +318,13 @@ const SchedulePage: React.FC = () => {
           </View>
           <View className={styles.quickBtn} onClick={handleSplitClick}>
             <Text>拆分排期</Text>
+          </View>
+          <View
+            className={styles.quickBtn}
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)', border: '1rpx solid rgba(255, 255, 255, 0.5)' }}
+            onClick={() => Taro.navigateTo({ url: '/pages/dashboard/index' })}
+          >
+            <Text>运营看板</Text>
           </View>
         </View>
       </View>
@@ -392,11 +420,13 @@ const SchedulePage: React.FC = () => {
         <View className={styles.pickerOverlay}>
           <View className={styles.pickerCard}>
             <Text className={styles.pickerTitle}>排期冲突提醒</Text>
-            <Text className={styles.pickerDesc}>共发现 {conflicts.length} 条风险，请及时处理</Text>
+            <Text className={styles.pickerDesc}>
+              共 {conflicts.length} 条风险，其中待处理 {conflicts.filter(c => c.status === 'pending').length} 条
+            </Text>
 
             <ScrollView className={styles.conflictScroll} scrollY>
               {conflicts.map((c, idx) => (
-                <View key={idx} className={styles.conflictItem}>
+                <View key={c.id} className={styles.conflictItem}>
                   <View className={styles.conflictHeader}>
                     <View
                       className={styles.conflictTypeTag}
@@ -405,12 +435,24 @@ const SchedulePage: React.FC = () => {
                       <Text>{conflictTypeLabel[c.type]}</Text>
                     </View>
                     <Text className={styles.conflictTitle}>{c.title}</Text>
+                    <View
+                      className={styles.conflictStatusTag}
+                      style={{
+                        backgroundColor: conflictStatusColor[c.status] + '20',
+                        color: conflictStatusColor[c.status]
+                      }}
+                    >
+                      <Text>{conflictStatusLabel[c.status]}</Text>
+                    </View>
                   </View>
                   <Text className={styles.conflictDesc}>{c.description}</Text>
                   <View className={styles.conflictMeta}>
                     <Text className={styles.conflictMetaItem}>吊车: {c.craneName}</Text>
                     {c.siteNames && c.siteNames.length > 0 && (
                       <Text className={styles.conflictMetaItem}>工地: {c.siteNames.join(' / ')}</Text>
+                    )}
+                    {c.handleTime && (
+                      <Text className={styles.conflictMetaItem}>处理时间: {c.handleTime}</Text>
                     )}
                   </View>
                   {c.orderIds && c.orderIds.length > 0 && (
@@ -429,13 +471,37 @@ const SchedulePage: React.FC = () => {
                       })}
                     </View>
                   )}
+                  {c.status === 'pending' && (
+                    <View className={styles.conflictHandleRow}>
+                      <View
+                        className={styles.conflictHandleBtn}
+                        onClick={() => handleMarkConflict(c.id, 'confirmed')}
+                      >
+                        <Text>已确认</Text>
+                      </View>
+                      <View
+                        className={styles.conflictHandleBtn}
+                        style={{ backgroundColor: '#00B42A', color: '#fff' }}
+                        onClick={() => handleMarkConflict(c.id, 'resolved')}
+                      >
+                        <Text>已处理</Text>
+                      </View>
+                      <View
+                        className={styles.conflictHandleBtn}
+                        style={{ backgroundColor: '#F2F3F5', color: '#86909C' }}
+                        onClick={() => handleMarkConflict(c.id, 'ignored')}
+                      >
+                        <Text>暂不处理</Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               ))}
             </ScrollView>
 
             <View className={styles.pickerActions}>
               <View className={styles.pickerConfirm} onClick={() => setShowConflicts(false)}>
-                <Text>我知道了</Text>
+                <Text>关闭</Text>
               </View>
             </View>
           </View>

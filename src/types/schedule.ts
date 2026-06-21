@@ -49,7 +49,10 @@ export interface SplitResult {
 
 export type ScheduleConflictType = 'overlap' | 'tightInterval' | 'overDuration';
 
+export type ConflictStatus = 'pending' | 'confirmed' | 'resolved' | 'ignored';
+
 export interface ScheduleConflict {
+  id: string;
   type: ScheduleConflictType;
   level: 'high' | 'medium' | 'low';
   title: string;
@@ -59,4 +62,7 @@ export interface ScheduleConflict {
   scheduleIds: string[];
   orderIds?: string[];
   siteNames?: string[];
+  status: ConflictStatus;
+  handleTime?: string;
+  handleRemark?: string;
 }

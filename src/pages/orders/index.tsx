@@ -39,19 +39,19 @@ const OrdersPage: React.FC = () => {
     const completed = orders.filter(o => o.status === 'completed').length;
 
     const totalAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const unsettledAmount = orders
+
+    const unsettledOrders = orders.filter(o => o.settlementStatus === 'unsettled');
+    const partialOrders = orders.filter(o => o.settlementStatus === 'partial');
+    const settledOrders = orders.filter(o => o.settlementStatus === 'settled');
+
+    const unsettledStatusAmount = unsettledOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const partialStatusAmount = partialOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const settledStatusAmount = settledOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+
+    const totalCollected = orders.reduce((sum, o) => sum + (o.settledAmount || 0), 0);
+    const totalUncollected = orders
       .filter(o => o.settlementStatus !== 'settled')
       .reduce((sum, o) => sum + (o.totalAmount - (o.settledAmount || 0)), 0);
-
-    const unsettledTotal = orders
-      .filter(o => o.settlementStatus === 'unsettled')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
-    const partialTotal = orders
-      .filter(o => o.settlementStatus === 'partial')
-      .reduce((sum, o) => sum + (o.totalAmount - (o.settledAmount || 0)), 0);
-    const settledTotal = orders
-      .filter(o => o.settlementStatus === 'settled')
-      .reduce((sum, o) => sum + (o.settledAmount || o.totalAmount), 0);
 
     const allRecords = orders
       .flatMap(o => (o.settlementRecords || []).map(r => ({ ...r, orderNo: o.orderNo })))
@@ -63,10 +63,12 @@ const OrdersPage: React.FC = () => {
       inProgress,
       completed,
       totalAmount,
-      unsettledAmount,
-      unsettledTotal,
-      partialTotal,
-      settledTotal,
+      unsettledAmount: totalUncollected,
+      unsettledStatusAmount,
+      partialStatusAmount,
+      settledStatusAmount,
+      totalCollected,
+      totalUncollected,
       recentRecords: allRecords.slice(0, 3)
     };
   }, [orders]);
@@ -135,29 +137,29 @@ const OrdersPage: React.FC = () => {
             {stats.totalAmount > 0 ? (
               <>
                 <View className={styles.progressBar}>
-                  {stats.unsettledTotal > 0 && (
+                  {stats.unsettledStatusAmount > 0 && (
                     <View
                       className={styles.progressSegment}
                       style={{
-                        width: `${(stats.unsettledTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        width: `${(stats.unsettledStatusAmount / stats.totalAmount * 100).toFixed(1)}%`,
                         backgroundColor: '#F53F3F'
                       }}
                     />
                   )}
-                  {stats.partialTotal > 0 && (
+                  {stats.partialStatusAmount > 0 && (
                     <View
                       className={styles.progressSegment}
                       style={{
-                        width: `${(stats.partialTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        width: `${(stats.partialStatusAmount / stats.totalAmount * 100).toFixed(1)}%`,
                         backgroundColor: '#FF7D00'
                       }}
                     />
                   )}
-                  {stats.settledTotal > 0 && (
+                  {stats.settledStatusAmount > 0 && (
                     <View
                       className={styles.progressSegment}
                       style={{
-                        width: `${(stats.settledTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        width: `${(stats.settledStatusAmount / stats.totalAmount * 100).toFixed(1)}%`,
                         backgroundColor: '#00B42A'
                       }}
                     />
@@ -166,15 +168,15 @@ const OrdersPage: React.FC = () => {
                 <View className={styles.progressLegend}>
                   <View className={styles.legendItem}>
                     <View className={styles.legendDot} style={{ backgroundColor: '#F53F3F' }} />
-                    <Text className={styles.legendText}>未结清 ¥{stats.unsettledTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.unsettledTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                    <Text className={styles.legendText}>未结清 ¥{stats.unsettledStatusAmount.toLocaleString()} ({stats.totalAmount > 0 ? (stats.unsettledStatusAmount / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
                   </View>
                   <View className={styles.legendItem}>
                     <View className={styles.legendDot} style={{ backgroundColor: '#FF7D00' }} />
-                    <Text className={styles.legendText}>部分结清 ¥{stats.partialTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.partialTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                    <Text className={styles.legendText}>部分结清 ¥{stats.partialStatusAmount.toLocaleString()} ({stats.totalAmount > 0 ? (stats.partialStatusAmount / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
                   </View>
                   <View className={styles.legendItem}>
                     <View className={styles.legendDot} style={{ backgroundColor: '#00B42A' }} />
-                    <Text className={styles.legendText}>已结清 ¥{stats.settledTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.settledTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                    <Text className={styles.legendText}>已结清 ¥{stats.settledStatusAmount.toLocaleString()} ({stats.totalAmount > 0 ? (stats.settledStatusAmount / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
                   </View>
                 </View>
               </>

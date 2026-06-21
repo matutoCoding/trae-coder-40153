@@ -17,11 +17,45 @@ let _orderIdCounter = 100;
 const _imageIds = [1074, 1071, 1072, 1076, 1081, 1080, 1067, 1059, 1062, 1068];
 
 let _settlementIdCounter = 100;
+let _conflicts: ScheduleConflict[] = [];
+let _conflictInitialized = false;
+
+const _ensureConflicts = () => {
+  if (!_conflictInitialized) {
+    _conflicts = detectScheduleConflicts(
+      _schedules.filter(s => s.status !== 'completed' && s.status !== 'cancelled'),
+      _cranes
+    );
+    _conflictInitialized = true;
+  }
+};
+
+const _refreshConflicts = () => {
+  const existingMap = new Map(_conflicts.map(c => [c.id, c]));
+  const fresh = detectScheduleConflicts(
+    _schedules.filter(s => s.status !== 'completed' && s.status !== 'cancelled'),
+    _cranes
+  );
+  _conflicts = fresh.map(f => {
+    const existing = _conflicts.find(e =>
+      e.type === f.type &&
+      e.craneId === f.craneId &&
+      e.scheduleIds.length === f.scheduleIds.length &&
+      e.scheduleIds.every(sid => f.scheduleIds.includes(sid))
+    );
+    if (existing) {
+      return { ...f, status: existing.status, handleTime: existing.handleTime, handleRemark: existing.handleRemark };
+    }
+    return f;
+  });
+};
 
 export const initStore = (cranes: Crane[], schedules: ScheduleItem[], orders: Order[]) => {
   _cranes = [...cranes];
   _schedules = [...schedules];
   _orders = [...orders.map(o => ({ ...o, settlementRecords: o.settlementRecords || [], settledAmount: o.settledAmount || 0 }))];
+  _conflictInitialized = false;
+  _conflicts = [];
 };
 
 export const getCranes = (): Crane[] => [..._cranes];
@@ -222,6 +256,17 @@ export const createOrderFromMatch = (data: {
   recommendScore: number;
   matchLevel: 'perfect' | 'good' | 'normal' | 'low';
   recommendRank?: number;
+  recommendTime?: string;
+  candidates?: Array<{
+    craneId: string;
+    craneName: string;
+    tonnage: number;
+    score: number;
+    rank: number;
+    matchLevel: 'perfect' | 'good' | 'normal' | 'low';
+    dailyRate: number;
+  }>;
+  selectionReason?: string;
 }): { order: Order; schedule: ScheduleItem } => {
   _orderIdCounter++;
   const orderId = `order_match_${_orderIdCounter}`;
@@ -236,7 +281,10 @@ export const createOrderFromMatch = (data: {
     requiredTonnage: data.requiredTonnage,
     preferredType: data.preferredType,
     weightConfig: data.weightConfig,
-    rank: data.recommendRank
+    rank: data.recommendRank,
+    recommendTime: data.recommendTime || now,
+    candidates: data.candidates,
+    selectionReason: data.selectionReason
   };
 
   const order: Order = {
@@ -384,8 +432,108 @@ export const saveWeightConfig = (config: WeightConfig): void => {
 };
 
 export const getScheduleConflicts = (): ScheduleConflict[] => {
-  return detectScheduleConflicts(
-    _schedules.filter(s => s.status !== 'completed' && s.status !== 'cancelled'),
-    _cranes
-  );
+  _ensureConflicts();
+  _refreshConflicts();
+  return [..._conflicts];
+};
+
+export const markConflictStatus = (
+  conflictId: string,
+  status: 'confirmed' | 'resolved' | 'ignored',
+  remark?: string
+): ScheduleConflict | null => {
+  _ensureConflicts();
+  const idx = _conflicts.findIndex(c => c.id === conflictId);
+  if (idx === -1) return null;
+
+  _conflicts[idx] = {
+    ..._conflicts[idx],
+    status,
+    handleTime: dayjs().format('YYYY-MM-DD HH:mm'),
+    handleRemark: remark
+  };
+  return _conflicts[idx];
+};
+
+export const settleOrder = (orderId: string, remark?: string): Order | null => {
+  const idx = _orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return null;
+
+  const now = dayjs().format('YYYY-MM-DD HH:mm');
+  const remaining = _orders[idx].totalAmount - (_orders[idx].settledAmount || 0);
+
+  _settlementIdCounter++;
+  const record: SettlementRecord = {
+    id: `settle_${_settlementIdCounter}`,
+    orderId,
+    amount: remaining,
+    type: 'final',
+    payTime: now,
+    payMethod: 'bank',
+    remark: remark || '尾款结算'
+  };
+
+  const records = [...(_orders[idx].settlementRecords || []), record];
+
+  _orders[idx] = {
+    ..._orders[idx],
+    status: 'completed',
+    settlementStatus: 'settled',
+    settlementTime: now,
+    completeTime: now,
+    settlementRecords: records,
+    settledAmount: _orders[idx].totalAmount
+  };
+
+  return _orders[idx];
+};
+
+export const getDashboardStats = (period: 'week' | 'month' = 'week') => {
+  const now = dayjs();
+  const startOfPeriod = period === 'week' ? now.startOf('week') : now.startOf('month');
+  const endOfPeriod = period === 'week' ? now.endOf('week') : now.endOf('month');
+
+  const periodOrders = _orders.filter(o => {
+    const createTime = dayjs(o.createTime);
+    return createTime.isAfter(startOfPeriod) && createTime.isBefore(endOfPeriod);
+  });
+
+  const totalOrders = periodOrders.length;
+  const totalAmount = periodOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const settledAmount = periodOrders.reduce((sum, o) => sum + (o.settledAmount || 0), 0);
+  const unsettledAmount = totalAmount - settledAmount;
+
+  const allSchedules = _schedules.filter(s => s.status !== 'completed' && s.status !== 'cancelled');
+  const periodSchedules = allSchedules.filter(s => {
+    const start = dayjs(s.startTime);
+    const end = dayjs(s.endTime);
+    return start.isBefore(endOfPeriod) && end.isAfter(startOfPeriod);
+  });
+
+  const totalCranes = _cranes.length;
+  const occupiedCranes = _cranes.filter(c => c.status === 'occupied').length;
+  const utilizationRate = totalCranes > 0 ? Math.round(occupiedCranes / totalCranes * 100) : 0;
+
+  _ensureConflicts();
+  _refreshConflicts();
+  const pendingConflicts = _conflicts.filter(c => c.status === 'pending');
+  const highRiskConflicts = pendingConflicts.filter(c => c.level === 'high');
+
+  return {
+    period,
+    periodLabel: period === 'week' ? '本周' : '本月',
+    startDate: startOfPeriod.format('YYYY-MM-DD'),
+    endDate: endOfPeriod.format('YYYY-MM-DD'),
+    totalOrders,
+    totalAmount,
+    settledAmount,
+    unsettledAmount,
+    periodScheduleCount: periodSchedules.length,
+    totalCranes,
+    occupiedCranes,
+    utilizationRate,
+    pendingConflictCount: pendingConflicts.length,
+    highRiskCount: highRiskConflicts.length,
+    allConflictCount: _conflicts.length
+  };
 };

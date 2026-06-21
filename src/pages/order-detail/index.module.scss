@@ -484,3 +484,77 @@
   font-size: 22rpx;
   font-weight: $font-weight-medium;
 }
+
+.traceCandidates {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.traceCandidatesLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.candidateList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.candidateItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-card;
+}
+
+.candidateRank {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: $color-primary-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.candidateRankText {
+  font-size: 24rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.candidateInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.candidateName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: block;
+}
+
+.candidateSpec {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.candidateScore {
+  flex-shrink: 0;
+}
+
+.candidateScoreText {
+  font-size: $font-size-sm;
+  color: $color-success;
+  font-weight: $font-weight-semibold;
+}
