@@ -2,7 +2,7 @@ import Taro from '@tarojs/taro';
 import dayjs from 'dayjs';
 import type { Crane } from '@/types/crane';
 import type { ScheduleItem } from '@/types/schedule';
-import type { Order } from '@/types/order';
+import type { Order, SettlementRecord } from '@/types/order';
 import type { WeightConfig } from '@/types/recommend';
 import { defaultWeightConfig } from '@/data/recommend';
 
@@ -15,10 +15,12 @@ let _orderIdCounter = 100;
 
 const _imageIds = [1074, 1071, 1072, 1076, 1081, 1080, 1067, 1059, 1062, 1068];
 
+let _settlementIdCounter = 100;
+
 export const initStore = (cranes: Crane[], schedules: ScheduleItem[], orders: Order[]) => {
   _cranes = [...cranes];
   _schedules = [...schedules];
-  _orders = [...orders];
+  _orders = [...orders.map(o => ({ ...o, settlementRecords: o.settlementRecords || [], settledAmount: o.settledAmount || 0 }))];
 };
 
 export const getCranes = (): Crane[] => [..._cranes];
@@ -198,7 +200,9 @@ export const createOrderFromMatch = (data: {
     createTime: now,
     confirmTime: now,
     remark: data.remark || '撮合订单',
-    settlementStatus: 'unsettled'
+    settlementStatus: 'unsettled',
+    settlementRecords: [],
+    settledAmount: 0
   };
 
   _orders.unshift(order);
@@ -232,12 +236,71 @@ export const settleOrder = (orderId: string): Order | null => {
   if (idx === -1) return null;
 
   const now = dayjs().format('YYYY-MM-DD HH:mm');
+  const remaining = _orders[idx].totalAmount - (_orders[idx].settledAmount || 0);
+
+  _settlementIdCounter++;
+  const record: SettlementRecord = {
+    id: `settle_${_settlementIdCounter}`,
+    orderId,
+    amount: remaining,
+    type: 'final',
+    payTime: now,
+    payMethod: 'bank',
+    remark: '尾款结算'
+  };
+
+  const records = [...(_orders[idx].settlementRecords || []), record];
+
   _orders[idx] = {
     ..._orders[idx],
     status: 'completed',
     settlementStatus: 'settled',
     settlementTime: now,
-    completeTime: now
+    completeTime: now,
+    settlementRecords: records,
+    settledAmount: _orders[idx].totalAmount
+  };
+
+  return _orders[idx];
+};
+
+export const partialSettleOrder = (orderId: string, amount: number, remark?: string): Order | null => {
+  const idx = _orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return null;
+
+  const order = _orders[idx];
+  const currentSettled = order.settledAmount || 0;
+  const remaining = order.totalAmount - currentSettled;
+
+  if (amount <= 0) return null;
+  if (amount > remaining) return null;
+
+  const now = dayjs().format('YYYY-MM-DD HH:mm');
+
+  _settlementIdCounter++;
+  const record: SettlementRecord = {
+    id: `settle_${_settlementIdCounter}`,
+    orderId,
+    amount,
+    type: currentSettled === 0 ? 'deposit' : 'progress',
+    payTime: now,
+    payMethod: 'bank',
+    remark
+  };
+
+  const newSettled = currentSettled + amount;
+  const newStatus = newSettled >= order.totalAmount ? 'settled' : 'partial';
+
+  const records = [...(order.settlementRecords || []), record];
+
+  _orders[idx] = {
+    ...order,
+    settlementStatus: newStatus,
+    settlementTime: newStatus === 'settled' ? now : order.settlementTime,
+    completeTime: newStatus === 'settled' ? now : order.completeTime,
+    status: newStatus === 'settled' ? 'completed' : order.status,
+    settlementRecords: records,
+    settledAmount: newSettled
   };
 
   return _orders[idx];

@@ -15,6 +15,10 @@ const SchedulePage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [showMergePicker, setShowMergePicker] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterCraneIdx, setFilterCraneIdx] = useState(0);
+  const [filterSiteIdx, setFilterSiteIdx] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'crane' | 'site'>('all');
   const [mergeCraneIdx, setMergeCraneIdx] = useState(0);
   const [splitScheduleIdx, setSplitScheduleIdx] = useState(0);
   const [splitTimeIdx, setSplitTimeIdx] = useState(0);
@@ -28,13 +32,45 @@ const SchedulePage: React.FC = () => {
     loadSchedules();
   });
 
-  const availableCranesForMerge = useMemo(() => {
-    const cranes = getCranes();
-    return cranes.map(c => `${c.name}(${c.id})`);
+  const allCranes = useMemo(() => {
+    return [{ id: '', name: '全部吊车' }, ...getCranes()];
   }, [schedules]);
 
+  const allSites = useMemo(() => {
+    const siteSet = new Set<string>();
+    schedules.forEach(s => siteSet.add(s.siteName));
+    return ['全部工地', ...Array.from(siteSet)];
+  }, [schedules]);
+
+  const filteredSchedules = useMemo(() => {
+    let result = schedules;
+    if (activeFilter === 'crane' && filterCraneIdx > 0) {
+      const crane = allCranes[filterCraneIdx];
+      if (crane && crane.id) {
+        result = result.filter(s => s.craneId === crane.id);
+      }
+    } else if (activeFilter === 'site' && filterSiteIdx > 0) {
+      const siteName = allSites[filterSiteIdx];
+      if (siteName && siteName !== '全部工地') {
+        result = result.filter(s => s.siteName === siteName);
+      }
+    }
+    return result;
+  }, [schedules, activeFilter, filterCraneIdx, filterSiteIdx, allCranes, allSites]);
+
+  const availableCranesForMerge = useMemo(() => {
+    if (activeFilter === 'crane' && filterCraneIdx > 0) {
+      const crane = allCranes[filterCraneIdx];
+      if (crane && crane.id) {
+        return [`${crane.name}(${crane.id})`];
+      }
+    }
+    const cranes = getCranes();
+    return cranes.map(c => `${c.name}(${c.id})`);
+  }, [schedules, activeFilter, filterCraneIdx, allCranes]);
+
   const splitableSchedules = useMemo(() => {
-    return schedules.filter(s => {
+    return filteredSchedules.filter(s => {
       const start = dayjs(s.startTime);
       const end = dayjs(s.endTime);
       return end.diff(start, 'hour') >= 4;
@@ -42,11 +78,11 @@ const SchedulePage: React.FC = () => {
       const crane = getCraneById(s.craneId);
       return `${s.siteName} - ${crane?.name || '未知'} (${s.id.slice(0, 12)}...)`;
     });
-  }, [schedules]);
+  }, [filteredSchedules]);
 
   const splitTimeOptions = useMemo(() => {
     if (splitScheduleIdx >= splitableSchedules.length) return ['12:00'];
-    const splitable = schedules.filter(s => {
+    const splitable = filteredSchedules.filter(s => {
       const start = dayjs(s.startTime);
       const end = dayjs(s.endTime);
       return end.diff(start, 'hour') >= 4;
@@ -63,19 +99,19 @@ const SchedulePage: React.FC = () => {
     }
     if (times.length === 0) times.push(`${String(midHour).padStart(2, '0')}:00`);
     return times;
-  }, [schedules, splitScheduleIdx]);
+  }, [filteredSchedules, splitScheduleIdx]);
 
   const selectedDateSchedules = useMemo(() => {
-    return schedules.filter(s => {
+    return filteredSchedules.filter(s => {
       const startDate = s.startTime.slice(0, 10);
       const endDate = s.endTime.slice(0, 10);
       return selectedDate >= startDate && selectedDate <= endDate;
     });
-  }, [schedules, selectedDate]);
+  }, [filteredSchedules, selectedDate]);
 
   const stats = useMemo(() => {
     const today = dayjs().format('YYYY-MM-DD');
-    const todaySchedules = schedules.filter(s => {
+    const todaySchedules = filteredSchedules.filter(s => {
       const start = s.startTime.slice(0, 10);
       const end = s.endTime.slice(0, 10);
       return today >= start && today <= end;
@@ -83,8 +119,8 @@ const SchedulePage: React.FC = () => {
     const cranes = getCranes();
     const occupiedCount = cranes.filter(c => c.status === 'occupied').length;
     const availableCount = cranes.filter(c => c.status === 'available').length;
-    return { todayTasks: todaySchedules.length, totalSchedules: schedules.length, occupiedCranes: occupiedCount, availableCranes: availableCount };
-  }, [schedules]);
+    return { todayTasks: todaySchedules.length, totalSchedules: filteredSchedules.length, occupiedCranes: occupiedCount, availableCranes: availableCount };
+  }, [filteredSchedules]);
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
@@ -92,22 +128,45 @@ const SchedulePage: React.FC = () => {
 
   const handleMonthChange = (year: number, month: number) => {};
 
+  const handleFilterClick = () => {
+    setShowFilter(true);
+  };
+
+  const handleFilterConfirm = () => {
+    setShowFilter(false);
+    Taro.showToast({ title: '筛选已应用', icon: 'none' });
+  };
+
+  const handleResetFilter = () => {
+    setActiveFilter('all');
+    setFilterCraneIdx(0);
+    setFilterSiteIdx(0);
+    setShowFilter(false);
+  };
+
   const handleMergeClick = () => {
     if (availableCranesForMerge.length === 0) {
       Taro.showToast({ title: '暂无可合并的吊车', icon: 'none' });
       return;
     }
+    setMergeCraneIdx(0);
     setShowMergePicker(true);
   };
 
   const handleMergeConfirm = () => {
-    const cranes = getCranes();
-    if (mergeCraneIdx >= cranes.length) {
-      Taro.showToast({ title: '请选择吊车', icon: 'none' });
-      return;
+    let targetCraneId = '';
+    if (activeFilter === 'crane' && filterCraneIdx > 0) {
+      targetCraneId = allCranes[filterCraneIdx].id;
+    } else {
+      const cranes = getCranes();
+      if (mergeCraneIdx >= cranes.length) {
+        Taro.showToast({ title: '请选择吊车', icon: 'none' });
+        return;
+      }
+      targetCraneId = cranes[mergeCraneIdx].id;
     }
-    const crane = cranes[mergeCraneIdx];
-    mergeSchedulesForCrane(crane.id);
+
+    mergeSchedulesForCrane(targetCraneId);
     loadSchedules();
     setShowMergePicker(false);
     Taro.showToast({ title: '合并完成', icon: 'success' });
@@ -124,7 +183,7 @@ const SchedulePage: React.FC = () => {
   };
 
   const handleSplitConfirm = () => {
-    const splitable = schedules.filter(s => {
+    const splitable = filteredSchedules.filter(s => {
       const start = dayjs(s.startTime);
       const end = dayjs(s.endTime);
       return end.diff(start, 'hour') >= 4;
@@ -156,6 +215,17 @@ const SchedulePage: React.FC = () => {
     confirmed: 'primary', pending: 'warning', completed: 'success', cancelled: 'info'
   };
 
+  const filterLabel = useMemo(() => {
+    if (activeFilter === 'all') return '全部';
+    if (activeFilter === 'crane' && filterCraneIdx > 0) {
+      return allCranes[filterCraneIdx]?.name || '全部';
+    }
+    if (activeFilter === 'site' && filterSiteIdx > 0) {
+      return allSites[filterSiteIdx] || '全部';
+    }
+    return '全部';
+  }, [activeFilter, filterCraneIdx, filterSiteIdx, allCranes, allSites]);
+
   return (
     <ScrollView className={styles.page} scrollY>
       <View className={styles.headerBg}>
@@ -173,6 +243,11 @@ const SchedulePage: React.FC = () => {
             <Text className={styles.statLabel}>作业中</Text>
           </View>
         </View>
+        <View className={styles.filterRow}>
+          <View className={styles.filterBtn} onClick={handleFilterClick}>
+            <Text>筛选: {filterLabel}</Text>
+          </View>
+        </View>
         <View className={styles.quickActions}>
           <View className={styles.quickBtn} onClick={handleMergeClick}>
             <Text>合并排期</Text>
@@ -182,6 +257,54 @@ const SchedulePage: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {showFilter && (
+        <View className={styles.pickerOverlay}>
+          <View className={styles.pickerCard}>
+            <Text className={styles.pickerTitle}>排期筛选</Text>
+            <Text className={styles.pickerDesc}>按吊车或工地筛选排期，合并拆分仅作用于筛选范围</Text>
+
+            <Text className={styles.pickerLabel}>筛选方式</Text>
+            <View className={styles.filterTypeRow}>
+              <View
+                className={activeFilter === 'all' ? styles.filterTypeActive : styles.filterTypeItem}
+                onClick={() => setActiveFilter('all')}
+              ><Text>全部</Text></View>
+              <View
+                className={activeFilter === 'crane' ? styles.filterTypeActive : styles.filterTypeItem}
+                onClick={() => setActiveFilter('crane')}
+              ><Text>按吊车</Text></View>
+              <View
+                className={activeFilter === 'site' ? styles.filterTypeActive : styles.filterTypeItem}
+                onClick={() => setActiveFilter('site')}
+              ><Text>按工地</Text></View>
+            </View>
+
+            {activeFilter === 'crane' && (
+              <>
+                <Text className={styles.pickerLabel}>选择吊车</Text>
+                <Picker mode="selector" range={allCranes.map(c => c.name)} value={filterCraneIdx} onChange={(e) => setFilterCraneIdx(Number(e.detail.value))}>
+                  <View className={styles.pickerValue}><Text>{allCranes[filterCraneIdx]?.name || '请选择'}</Text></View>
+                </Picker>
+              </>
+            )}
+
+            {activeFilter === 'site' && (
+              <>
+                <Text className={styles.pickerLabel}>选择工地</Text>
+                <Picker mode="selector" range={allSites} value={filterSiteIdx} onChange={(e) => setFilterSiteIdx(Number(e.detail.value))}>
+                  <View className={styles.pickerValue}><Text>{allSites[filterSiteIdx] || '请选择'}</Text></View>
+                </Picker>
+              </>
+            )}
+
+            <View className={styles.pickerActions}>
+              <View className={styles.pickerCancel} onClick={handleResetFilter}><Text>重置</Text></View>
+              <View className={styles.pickerConfirm} onClick={handleFilterConfirm}><Text>确定</Text></View>
+            </View>
+          </View>
+        </View>
+      )}
 
       {showMergePicker && (
         <View className={styles.pickerOverlay}>
@@ -224,7 +347,7 @@ const SchedulePage: React.FC = () => {
 
       <View className={styles.content}>
         <View className={styles.section}>
-          <ScheduleCalendar schedules={schedules} selectedDate={selectedDate} onDateSelect={handleDateSelect} onMonthChange={handleMonthChange} />
+          <ScheduleCalendar schedules={filteredSchedules} selectedDate={selectedDate} onDateSelect={handleDateSelect} onMonthChange={handleMonthChange} />
           <View className={styles.legendRow}>
             <View className={styles.legendItem}><View className={styles.legendDot} style={{ backgroundColor: '#1E5EFA' }} /><Text className={styles.legendText}>已确认</Text></View>
             <View className={styles.legendItem}><View className={styles.legendDot} style={{ backgroundColor: '#FF7D00' }} /><Text className={styles.legendText}>待确认</Text></View>

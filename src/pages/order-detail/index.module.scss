@@ -254,3 +254,161 @@
     opacity: 0.9;
   }
 }
+
+.warning {
+  color: $color-warning !important;
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.recordItem {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.recordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.recordTypeTag {
+  display: inline-flex;
+  align-items: center;
+  height: 44rpx;
+  padding: 0 $spacing-md;
+  border-radius: $radius-button;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.recordAmount {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
+}
+
+.recordBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.recordTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.recordRemark {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.settleOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settleCard {
+  width: 640rpx;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  box-shadow: $shadow-card;
+}
+
+.settleTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.settleSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.settleLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.settleTotal {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.settleSettled {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
+}
+
+.settleRemaining {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-warning;
+}
+
+.settleActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.settleCancel {
+  @include button-reset;
+  flex: 1;
+  height: 80rpx;
+  border-radius: $radius-button;
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  border: 1rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.settleOk {
+  @include button-reset;
+  flex: 1;
+  height: 80rpx;
+  border-radius: $radius-button;
+  background: $gradient-success;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}

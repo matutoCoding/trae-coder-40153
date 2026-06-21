@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView } from '@tarojs/components';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, Image, ScrollView, Input } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import type { Crane } from '@/types/crane';
@@ -14,25 +14,26 @@ const RecommendDetailPage: React.FC = () => {
   const router = useRouter();
   const [crane, setCrane] = useState<Crane | null>(null);
   const [recommendItem, setRecommendItem] = useState<RecommendItem | null>(null);
-  const [requestParams, setRequestParams] = useState({
-    siteName: '',
-    siteAddress: '',
-    requiredTonnage: 0,
-    preferredType: 'truck'
-  });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [formDays, setFormDays] = useState('3');
+  const [formContact, setFormContact] = useState('张工');
+  const [formPhone, setFormPhone] = useState('13888888888');
+  const [formRemark, setFormRemark] = useState('');
+
+  const requestParams = useMemo(() => {
+    const tonnage = Number(router.params.tonnage) || 0;
+    const preferredType = (router.params.preferredType as string) || 'truck';
+    const siteName = decodeURIComponent(router.params.siteName as string || '未指定工地');
+    const siteAddress = decodeURIComponent(router.params.siteAddress as string || '未指定地址');
+    return { siteName, siteAddress, requiredTonnage: tonnage, preferredType };
+  }, [router.params]);
 
   useEffect(() => {
     const craneId = router.params.craneId as string;
-    const tonnage = Number(router.params.tonnage) || 0;
-    const preferredType = (router.params.preferredType as string) || 'truck';
-    const siteName = decodeURIComponent(router.params.siteName as string || '');
-    const siteAddress = decodeURIComponent(router.params.siteAddress as string || '');
-
     if (craneId) {
-      setRequestParams({ siteName, siteAddress, requiredTonnage: tonnage, preferredType });
-      loadData(craneId, tonnage, preferredType);
+      loadData(craneId, requestParams.requiredTonnage, requestParams.preferredType);
     }
-  }, [router.params]);
+  }, [router.params.craneId]);
 
   const loadData = (craneId: string, tonnage: number, preferredType: string) => {
     console.log('[RecommendDetail] 加载推荐详情:', craneId);
@@ -59,43 +60,58 @@ const RecommendDetailPage: React.FC = () => {
     }
   };
 
+  const totalAmount = useMemo(() => {
+    const days = Number(formDays) || 0;
+    return (crane?.dailyRate || 0) * days;
+  }, [formDays, crane]);
+
   const handleMatch = () => {
     if (!crane) return;
+    setShowConfirm(true);
+  };
 
-    Taro.showModal({
-      title: '确认撮合',
-      content: `确认将「${crane.name}」与「${requestParams.siteName}」进行撮合？`,
-      success: (res) => {
-        if (res.confirm) {
-          const now = dayjs();
-          const endDate = now.add(3, 'day');
-          const days = 3;
+  const handleConfirmMatch = () => {
+    if (!crane) return;
 
-          const result = createOrderFromMatch({
-            craneId: crane.id,
-            siteName: requestParams.siteName || '未指定工地',
-            siteAddress: requestParams.siteAddress || '未指定地址',
-            startTime: now.format('YYYY-MM-DD HH:mm'),
-            endTime: endDate.format('YYYY-MM-DD HH:mm'),
-            days,
-            dailyRate: crane.dailyRate,
-            contactPerson: '张工',
-            contactPhone: '138****8888',
-            remark: '智能推荐撮合',
-            weightConfig: getWeightConfig(),
-            requiredTonnage: requestParams.requiredTonnage,
-            preferredType: requestParams.preferredType
-          });
+    const days = Number(formDays);
+    if (!days || days <= 0 || !Number.isInteger(days)) {
+      Taro.showToast({ title: '请输入正确的台班数', icon: 'none' });
+      return;
+    }
+    if (!formContact.trim()) {
+      Taro.showToast({ title: '请输入联系人', icon: 'none' });
+      return;
+    }
+    if (!formPhone.trim()) {
+      Taro.showToast({ title: '请输入联系电话', icon: 'none' });
+      return;
+    }
 
-          Taro.showToast({ title: '撮合成功', icon: 'success' });
-          setTimeout(() => {
-            Taro.redirectTo({
-              url: `/pages/order-detail/index?id=${result.order.id}`
-            });
-          }, 1500);
-        }
-      }
+    const now = dayjs();
+    const endDate = now.add(days - 1, 'day').hour(18).minute(0);
+
+    const result = createOrderFromMatch({
+      craneId: crane.id,
+      siteName: requestParams.siteName,
+      siteAddress: requestParams.siteAddress,
+      startTime: now.format('YYYY-MM-DD HH:mm'),
+      endTime: endDate.format('YYYY-MM-DD HH:mm'),
+      days,
+      dailyRate: crane.dailyRate,
+      contactPerson: formContact.trim(),
+      contactPhone: formPhone.trim(),
+      remark: formRemark.trim() || '智能推荐撮合',
+      weightConfig: getWeightConfig(),
+      requiredTonnage: requestParams.requiredTonnage,
+      preferredType: requestParams.preferredType
     });
+
+    Taro.showToast({ title: '撮合成功', icon: 'success' });
+    setTimeout(() => {
+      Taro.redirectTo({
+        url: `/pages/order-detail/index?id=${result.order.id}`
+      });
+    }, 1500);
   };
 
   const handleViewCrane = () => {
@@ -155,7 +171,7 @@ const RecommendDetailPage: React.FC = () => {
 
         <View className={styles.scoreCard}>
           <Text className={styles.cardTitle}>多维度打分明细</Text>
-          {recommendItem.scoreDetails.map((detail, index) => (
+          {recommendItem.scoreDetails.map((detail) => (
             <View key={detail.dimension} className={styles.scoreItem}>
               <View className={styles.scoreHeader}>
                 <Text className={styles.scoreName}>
@@ -188,6 +204,74 @@ const RecommendDetailPage: React.FC = () => {
           <Text>立即撮合</Text>
         </View>
       </View>
+
+      {showConfirm && (
+        <View className={styles.confirmOverlay}>
+          <View className={styles.confirmCard}>
+            <Text className={styles.confirmTitle}>撮合确认</Text>
+            <View className={styles.confirmSummary}>
+              <Text className={styles.confirmCrane}>{crane.name}</Text>
+              <Text className={styles.confirmSite}>{requestParams.siteName}</Text>
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>预计台班数(天)</Text>
+              <Input
+                className={styles.formInput}
+                type="number"
+                placeholder="请输入台班数"
+                value={formDays}
+                onInput={(e) => setFormDays(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>联系人</Text>
+              <Input
+                className={styles.formInput}
+                placeholder="请输入联系人姓名"
+                value={formContact}
+                onInput={(e) => setFormContact(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>联系电话</Text>
+              <Input
+                className={styles.formInput}
+                type="number"
+                placeholder="请输入联系电话"
+                value={formPhone}
+                onInput={(e) => setFormPhone(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>备注</Text>
+              <Input
+                className={styles.formInput}
+                placeholder="选填"
+                value={formRemark}
+                onInput={(e) => setFormRemark(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.confirmAmount}>
+              <Text className={styles.amountLabel}>预计总金额</Text>
+              <Text className={styles.amountValue}>¥{totalAmount.toLocaleString()}</Text>
+            </View>
+
+            <View className={styles.confirmActions}>
+              <View className={styles.confirmCancel} onClick={() => setShowConfirm(false)}>
+                <Text>取消</Text>
+              </View>
+              <View className={styles.confirmOk} onClick={handleConfirmMatch}>
+                <Text>确认撮合</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };

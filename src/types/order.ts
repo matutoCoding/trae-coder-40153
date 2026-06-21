@@ -24,6 +24,8 @@ export interface Order {
   remark?: string;
   settlementStatus: SettlementStatus;
   settlementTime?: string;
+  settlementRecords?: SettlementRecord[];
+  settledAmount?: number;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'inProgress' | 'completed' | 'cancelled';

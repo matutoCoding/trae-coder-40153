@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView } from '@tarojs/components';
-import Taro, { useRouter } from '@tarojs/taro';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, Image, ScrollView, Input } from '@tarojs/components';
+import Taro, { useRouter, useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import StatusTag from '@/components/StatusTag';
 import type { Order } from '@/types/order';
 import type { Crane } from '@/types/crane';
-import { getOrderById, getCraneById, settleOrder } from '@/store/index';
+import { getOrderById, getCraneById, settleOrder, partialSettleOrder } from '@/store/index';
 import { orderStatusLabel, settlementStatusLabel } from '@/types/order';
 import { formatDate, formatDateTime } from '@/utils/date';
 
@@ -14,13 +14,9 @@ const OrderDetailPage: React.FC = () => {
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [crane, setCrane] = useState<Crane | null>(null);
-
-  useEffect(() => {
-    const id = router.params.id as string;
-    if (id) {
-      loadOrderDetail(id);
-    }
-  }, [router.params.id]);
+  const [showSettle, setShowSettle] = useState(false);
+  const [settleAmount, setSettleAmount] = useState('');
+  const [settleRemark, setSettleRemark] = useState('');
 
   const loadOrderDetail = (id: string) => {
     console.log('[OrderDetail] 加载订单详情:', id);
@@ -34,23 +30,57 @@ const OrderDetailPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const id = router.params.id as string;
+    if (id) {
+      loadOrderDetail(id);
+    }
+  }, [router.params.id]);
+
+  useDidShow(() => {
+    const id = router.params.id as string;
+    if (id) {
+      loadOrderDetail(id);
+    }
+  });
+
+  const remainingAmount = useMemo(() => {
+    if (!order) return 0;
+    return order.totalAmount - (order.settledAmount || 0);
+  }, [order]);
+
   const handleSettle = () => {
+    setSettleAmount(String(remainingAmount || ''));
+    setSettleRemark('');
+    setShowSettle(true);
+  };
+
+  const handleConfirmSettle = () => {
     if (!order) return;
-    Taro.showModal({
-      title: '确认结算',
-      content: `确认结算该订单，金额 ¥${order.totalAmount.toLocaleString()}？`,
-      success: (res) => {
-        if (res.confirm) {
-          const updated = settleOrder(order.id);
-          if (updated) {
-            setOrder(updated);
-            Taro.showToast({ title: '结算成功', icon: 'success' });
-          } else {
-            Taro.showToast({ title: '结算失败', icon: 'error' });
-          }
-        }
-      }
-    });
+    const amount = Number(settleAmount);
+    if (!amount || amount <= 0) {
+      Taro.showToast({ title: '请输入正确的结算金额', icon: 'none' });
+      return;
+    }
+    if (amount > remainingAmount) {
+      Taro.showToast({ title: `金额不能超过剩余 ¥${remainingAmount}`, icon: 'none' });
+      return;
+    }
+
+    let updated;
+    if (amount >= remainingAmount - 0.01) {
+      updated = settleOrder(order.id);
+    } else {
+      updated = partialSettleOrder(order.id, amount, settleRemark.trim());
+    }
+
+    if (updated) {
+      setOrder(updated);
+      setShowSettle(false);
+      Taro.showToast({ title: '结算成功', icon: 'success' });
+    } else {
+      Taro.showToast({ title: '结算失败', icon: 'error' });
+    }
   };
 
   const handleContact = () => {
@@ -71,6 +101,12 @@ const OrderDetailPage: React.FC = () => {
     cancelled: 'error'
   };
 
+  const settlementTypeLabel: Record<string, string> = {
+    deposit: '定金',
+    progress: '进度款',
+    final: '尾款'
+  };
+
   if (!order) {
     return (
       <View className={styles.page}>
@@ -80,6 +116,7 @@ const OrderDetailPage: React.FC = () => {
   }
 
   const showSettleBtn = order.settlementStatus !== 'settled' && order.status !== 'cancelled';
+  const records = order.settlementRecords || [];
 
   return (
     <ScrollView className={styles.page} scrollY>
@@ -154,6 +191,22 @@ const OrderDetailPage: React.FC = () => {
                 ¥{order.totalAmount.toLocaleString()}
               </Text>
             </View>
+            {order.settledAmount && order.settledAmount > 0 && (
+              <View className={styles.priceRow}>
+                <Text className={styles.priceLabel}>已结算</Text>
+                <Text className={styles.priceValue} style={{ color: '#00B42A' }}>
+                  ¥{order.settledAmount.toLocaleString()}
+                </Text>
+              </View>
+            )}
+            {remainingAmount > 0 && (
+              <View className={styles.priceRow}>
+                <Text className={styles.priceLabel}>待结算</Text>
+                <Text className={classnames(styles.priceValue, styles.warning)}>
+                  ¥{remainingAmount.toLocaleString()}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -184,6 +237,30 @@ const OrderDetailPage: React.FC = () => {
             </View>
           )}
         </View>
+
+        {records.length > 0 && (
+          <View className={styles.infoCard}>
+            <Text className={styles.cardTitle}>结算记录</Text>
+            <View className={styles.recordList}>
+              {records.map((record, index) => (
+                <View key={record.id} className={styles.recordItem}>
+                  <View className={styles.recordHeader}>
+                    <View className={styles.recordTypeTag}>
+                      <Text>{settlementTypeLabel[record.type] || '结算'}</Text>
+                    </View>
+                    <Text className={styles.recordAmount}>+¥{record.amount.toLocaleString()}</Text>
+                  </View>
+                  <View className={styles.recordBody}>
+                    <Text className={styles.recordTime}>{formatDateTime(record.payTime)}</Text>
+                    {record.remark && (
+                      <Text className={styles.recordRemark}>备注：{record.remark}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
 
       <View className={styles.bottomBar}>
@@ -200,6 +277,56 @@ const OrderDetailPage: React.FC = () => {
           </View>
         )}
       </View>
+
+      {showSettle && (
+        <View className={styles.settleOverlay}>
+          <View className={styles.settleCard}>
+            <Text className={styles.settleTitle}>结算确认</Text>
+            <View className={styles.settleSummary}>
+              <Text className={styles.settleLabel}>订单总额</Text>
+              <Text className={styles.settleTotal}>¥{order.totalAmount.toLocaleString()}</Text>
+            </View>
+            <View className={styles.settleSummary}>
+              <Text className={styles.settleLabel}>已结算</Text>
+              <Text className={styles.settleSettled}>¥{(order.settledAmount || 0).toLocaleString()}</Text>
+            </View>
+            <View className={styles.settleSummary}>
+              <Text className={styles.settleLabel}>待结算</Text>
+              <Text className={styles.settleRemaining}>¥{remainingAmount.toLocaleString()}</Text>
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>本次结算金额(元)</Text>
+              <Input
+                className={styles.formInput}
+                type="digit"
+                placeholder="请输入结算金额"
+                value={settleAmount}
+                onInput={(e) => setSettleAmount(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.formGroup}>
+              <Text className={styles.formLabel}>备注</Text>
+              <Input
+                className={styles.formInput}
+                placeholder="选填，如：定金、进度款等"
+                value={settleRemark}
+                onInput={(e) => setSettleRemark(e.detail.value)}
+              />
+            </View>
+
+            <View className={styles.settleActions}>
+              <View className={styles.settleCancel} onClick={() => setShowSettle(false)}>
+                <Text>取消</Text>
+              </View>
+              <View className={styles.settleOk} onClick={handleConfirmSettle}>
+                <Text>确认结算</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };

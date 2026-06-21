@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { View, Text, ScrollView, Input } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
@@ -17,20 +17,9 @@ const RecommendPage: React.FC = () => {
   const [weightConfig, setWeightConfig] = useState<WeightConfig>(getWeightConfig());
   const [recommendations, setRecommendations] = useState<RecommendItem[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const lastWeightRef = useRef<string>(JSON.stringify(getWeightConfig()));
 
-  useDidShow(() => {
-    const saved = getWeightConfig();
-    setWeightConfig(saved);
-  });
-
-  const craneTypes = [
-    { key: 'truck', label: '汽车吊' },
-    { key: 'crawler', label: '履带吊' },
-    { key: 'tower', label: '塔吊' },
-    { key: 'roughTerrain', label: '越野吊' }
-  ];
-
-  const doRecommend = () => {
+  const doRecommend = useCallback(() => {
     const trimmed = requiredTonnage.trim();
     if (!trimmed) {
       Taro.showToast({ title: '请输入需求吨位', icon: 'none' });
@@ -44,6 +33,10 @@ const RecommendPage: React.FC = () => {
 
     console.log('[Recommend] 执行智能推荐，吨位:', tonnage);
     const craneList = getCranes();
+    const currentWeight = getWeightConfig();
+    setWeightConfig(currentWeight);
+    lastWeightRef.current = JSON.stringify(currentWeight);
+
     const request = {
       siteName,
       siteAddress,
@@ -54,11 +47,47 @@ const RecommendPage: React.FC = () => {
       distance: 0
     };
 
-    const results = getRecommendedCranes(craneList, request, weightConfig, 5);
+    const results = getRecommendedCranes(craneList, request, currentWeight, 5);
     setRecommendations(results);
     setHasSearched(true);
     console.log('[Recommend] 推荐结果数量:', results.length);
-  };
+  }, [requiredTonnage, siteName, siteAddress, preferredType]);
+
+  useDidShow(() => {
+    const savedWeight = getWeightConfig();
+    const savedStr = JSON.stringify(savedWeight);
+    if (hasSearched && savedStr !== lastWeightRef.current) {
+      console.log('[Recommend] 权重已变更，自动重算推荐');
+      setWeightConfig(savedWeight);
+      lastWeightRef.current = savedStr;
+
+      const tonnage = Number(requiredTonnage.trim());
+      if (tonnage > 0 && Number.isInteger(tonnage)) {
+        const craneList = getCranes();
+        const request = {
+          siteName,
+          siteAddress,
+          requiredTonnage: tonnage,
+          preferredType,
+          startTime: '',
+          endTime: '',
+          distance: 0
+        };
+        const results = getRecommendedCranes(craneList, request, savedWeight, 5);
+        setRecommendations(results);
+      }
+    } else {
+      setWeightConfig(savedWeight);
+      lastWeightRef.current = savedStr;
+    }
+  });
+
+  const craneTypes = [
+    { key: 'truck', label: '汽车吊' },
+    { key: 'crawler', label: '履带吊' },
+    { key: 'tower', label: '塔吊' },
+    { key: 'roughTerrain', label: '越野吊' }
+  ];
 
   const gotoWeightConfig = () => {
     Taro.navigateTo({
@@ -83,6 +112,23 @@ const RecommendPage: React.FC = () => {
   const applyPreset = (preset: typeof weightPresets[0]) => {
     setWeightConfig(preset.config);
     Taro.showToast({ title: `已应用「${preset.name}」`, icon: 'none' });
+    if (hasSearched) {
+      const tonnage = Number(requiredTonnage.trim());
+      if (tonnage > 0 && Number.isInteger(tonnage)) {
+        const craneList = getCranes();
+        const request = {
+          siteName,
+          siteAddress,
+          requiredTonnage: tonnage,
+          preferredType,
+          startTime: '',
+          endTime: '',
+          distance: 0
+        };
+        const results = getRecommendedCranes(craneList, request, preset.config, 5);
+        setRecommendations(results);
+      }
+    }
   };
 
   const totalWeight = useMemo(() => {

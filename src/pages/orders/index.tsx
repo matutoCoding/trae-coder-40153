@@ -41,7 +41,7 @@ const OrdersPage: React.FC = () => {
     const totalAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
     const unsettledAmount = orders
       .filter(o => o.settlementStatus !== 'settled')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
+      .reduce((sum, o) => sum + (o.totalAmount - (o.settledAmount || 0)), 0);
 
     return {
       total,
