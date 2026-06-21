@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import type { ScheduleItem, MergeResult, SplitResult } from '@/types/schedule';
+import type { ScheduleItem, MergeResult, SplitResult, ScheduleConflict } from '@/types/schedule';
+import type { Crane } from '@/types/crane';
 
 export const canMergeSchedules = (
   item1: ScheduleItem, item2: ScheduleItem): boolean => {
@@ -128,4 +129,152 @@ export const checkScheduleOverlap = (
   const end2 = dayjs(schedule2.endTime);
 
   return start1.isBefore(end2) && end1.isAfter(start2);
+};
+
+export const canMergeSchedulesForSite = (
+  item1: ScheduleItem,
+  item2: ScheduleItem,
+  siteName: string
+): boolean => {
+  if (item1.craneId !== item2.craneId) return false;
+  if (item1.siteName !== siteName || item2.siteName !== siteName) return false;
+  if (item1.status !== item2.status) return false;
+
+  const end1 = dayjs(item1.endTime);
+  const start2 = dayjs(item2.startTime);
+  const diffHours = start2.diff(end1, 'hour');
+
+  return diffHours <= 24 && diffHours >= 0;
+};
+
+export const mergeAdjacentSchedulesForSite = (
+  schedules: ScheduleItem[],
+  siteName: string
+): MergeResult => {
+  if (schedules.length <= 1) {
+    return { merged: [...schedules], originalCount: schedules.length, mergedCount: schedules.length };
+  }
+
+  const targetSchedules = schedules.filter(s => s.siteName === siteName);
+  const otherSchedules = schedules.filter(s => s.siteName !== siteName);
+
+  if (targetSchedules.length <= 1) {
+    return { merged: [...schedules], originalCount: schedules.length, mergedCount: schedules.length };
+  }
+
+  const sorted = [...targetSchedules].sort((a, b) =>
+    dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
+  );
+
+  const merged: ScheduleItem[] = [];
+  let current = sorted[0];
+  let mergedIds = [sorted[0].id];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const next = sorted[i];
+    if (canMergeSchedulesForSite(current, next, siteName)) {
+      current = {
+        ...current,
+        endTime: next.endTime,
+        isMerged: true,
+        mergedFrom: [...(current.mergedFrom || [current.id]), next.id],
+        id: `merged_${current.id}_${next.id}`
+      };
+      mergedIds.push(next.id);
+    } else {
+      merged.push(current);
+      current = next;
+      mergedIds = [next.id];
+    }
+  }
+  merged.push(current);
+
+  return {
+    merged: [...merged, ...otherSchedules],
+    originalCount: targetSchedules.length,
+    mergedCount: merged.length
+  };
+};
+
+export const detectScheduleConflicts = (
+  schedules: ScheduleItem[],
+  cranes: Crane[]
+): ScheduleConflict[] => {
+  const conflicts: ScheduleConflict[] = [];
+  const MAX_DAILY_HOURS = 12;
+  const MIN_INTERVAL_HOURS = 4;
+
+  const groupedByCrane = new Map<string, ScheduleItem[]>();
+  schedules.forEach(s => {
+    if (!groupedByCrane.has(s.craneId)) groupedByCrane.set(s.craneId, []);
+    groupedByCrane.get(s.craneId)!.push(s);
+  });
+
+  groupedByCrane.forEach((craneSchedules, craneId) => {
+    if (craneSchedules.length < 2) return;
+
+    const crane = cranes.find(c => c.id === craneId);
+    const craneName = crane?.name || `吊车#${craneId.slice(-4)}`;
+    const sorted = [...craneSchedules].sort(
+      (a, b) => dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
+    );
+
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const a = sorted[i];
+        const b = sorted[j];
+        if (checkScheduleOverlap(a, b)) {
+          conflicts.push({
+            type: 'overlap',
+            level: 'high',
+            title: '时间重叠冲突',
+            description: `「${a.siteName}」(${dayjs(a.startTime).format('MM-DD HH:mm')}~${dayjs(a.endTime).format('MM-DD HH:mm')}) 与 「${b.siteName}」(${dayjs(b.startTime).format('MM-DD HH:mm')}~${dayjs(b.endTime).format('MM-DD HH:mm')}) 时间重叠`,
+            craneId,
+            craneName,
+            scheduleIds: [a.id, b.id],
+            orderIds: [a.orderId, b.orderId].filter(Boolean) as string[],
+            siteNames: [a.siteName, b.siteName]
+          });
+        }
+      }
+
+      const durationHours = dayjs(sorted[i].endTime).diff(dayjs(sorted[i].startTime), 'hour', true);
+      if (durationHours > MAX_DAILY_HOURS) {
+        conflicts.push({
+          type: 'overDuration',
+          level: 'medium',
+          title: '超出单班时长',
+          description: `「${sorted[i].siteName}」作业时长 ${durationHours.toFixed(1)} 小时，超过单班 ${MAX_DAILY_HOURS} 小时上限`,
+          craneId,
+          craneName,
+          scheduleIds: [sorted[i].id],
+          orderIds: sorted[i].orderId ? [sorted[i].orderId] : undefined,
+          siteNames: [sorted[i].siteName]
+        });
+      }
+    }
+
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const curr = sorted[i];
+      const next = sorted[i + 1];
+      if (curr.siteName !== next.siteName) {
+        const gapHours = dayjs(next.startTime).diff(dayjs(curr.endTime), 'hour', true);
+        if (gapHours < MIN_INTERVAL_HOURS && gapHours >= 0) {
+          conflicts.push({
+            type: 'tightInterval',
+            level: 'medium',
+            title: '跨工地转场间隔过短',
+            description: `从「${curr.siteName}」收工到「${next.siteName}」开工仅 ${gapHours.toFixed(1)} 小时，低于建议 ${MIN_INTERVAL_HOURS} 小时转场时间`,
+            craneId,
+            craneName,
+            scheduleIds: [curr.id, next.id],
+            orderIds: [curr.orderId, next.orderId].filter(Boolean) as string[],
+            siteNames: [curr.siteName, next.siteName]
+          });
+        }
+      }
+    }
+  });
+
+  return conflicts;
 };

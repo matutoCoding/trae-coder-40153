@@ -46,3 +46,17 @@ export interface SplitResult {
   split: ScheduleItem[];
   original: ScheduleItem;
 }
+
+export type ScheduleConflictType = 'overlap' | 'tightInterval' | 'overDuration';
+
+export interface ScheduleConflict {
+  type: ScheduleConflictType;
+  level: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  craneId: string;
+  craneName?: string;
+  scheduleIds: string[];
+  orderIds?: string[];
+  siteNames?: string[];
+}

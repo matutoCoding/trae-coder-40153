@@ -412,3 +412,75 @@
     opacity: 0.9;
   }
 }
+
+.traceHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.traceScoreBox {
+  display: flex;
+  align-items: baseline;
+}
+
+.traceScoreValue {
+  font-size: 56rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  line-height: 1;
+}
+
+.traceScoreLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-left: 4rpx;
+}
+
+.traceLevelTag {
+  padding: 8rpx 20rpx;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.traceRank {
+  margin-left: auto;
+}
+
+.traceRankText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.traceWeights {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.traceWeightsLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+  display: block;
+}
+
+.traceWeightList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.traceWeightTag {
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: 22rpx;
+  font-weight: $font-weight-medium;
+}

@@ -6,7 +6,7 @@ import type { Crane } from '@/types/crane';
 import type { RecommendItem } from '@/types/recommend';
 import { matchLevelLabel, matchLevelColor } from '@/types/recommend';
 import { craneTypeLabel } from '@/types/crane';
-import { calculateRecommendScore } from '@/utils/recommend';
+import { calculateRecommendScore, getRecommendedCranes } from '@/utils/recommend';
 import { getCraneById, getWeightConfig, getCranes, createOrderFromMatch } from '@/store/index';
 import dayjs from 'dayjs';
 
@@ -25,7 +25,10 @@ const RecommendDetailPage: React.FC = () => {
     const preferredType = (router.params.preferredType as string) || 'truck';
     const siteName = decodeURIComponent(router.params.siteName as string || '未指定工地');
     const siteAddress = decodeURIComponent(router.params.siteAddress as string || '未指定地址');
-    return { siteName, siteAddress, requiredTonnage: tonnage, preferredType };
+    const initialRank = Number(router.params.rank) || 1;
+    const initialScore = Number(router.params.score) || 0;
+    const initialMatchLevel = (router.params.matchLevel as any) || 'normal';
+    return { siteName, siteAddress, requiredTonnage: tonnage, preferredType, initialRank, initialScore, initialMatchLevel };
   }, [router.params]);
 
   useEffect(() => {
@@ -56,7 +59,16 @@ const RecommendDetailPage: React.FC = () => {
       };
 
       const result = calculateRecommendScore(craneData, request, weightConfig, avgRate);
-      setRecommendItem(result);
+
+      // 按当前权重在全量推荐中的真实排名
+      const allResults = getRecommendedCranes(craneList, request, weightConfig, 999);
+      const currentIdx = allResults.findIndex(r => r.crane.id === craneId);
+      const realRank = currentIdx >= 0 ? currentIdx + 1 : requestParams.initialRank;
+
+      setRecommendItem({
+        ...result,
+        rank: realRank
+      });
     }
   };
 
@@ -103,7 +115,10 @@ const RecommendDetailPage: React.FC = () => {
       remark: formRemark.trim() || '智能推荐撮合',
       weightConfig: getWeightConfig(),
       requiredTonnage: requestParams.requiredTonnage,
-      preferredType: requestParams.preferredType
+      preferredType: requestParams.preferredType,
+      recommendScore: recommendItem?.score || 0,
+      matchLevel: recommendItem?.matchLevel || 'normal',
+      recommendRank: recommendItem?.rank
     });
 
     Taro.showToast({ title: '撮合成功', icon: 'success' });

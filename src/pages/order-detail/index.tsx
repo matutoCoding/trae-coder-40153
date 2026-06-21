@@ -8,6 +8,7 @@ import type { Order } from '@/types/order';
 import type { Crane } from '@/types/crane';
 import { getOrderById, getCraneById, settleOrder, partialSettleOrder } from '@/store/index';
 import { orderStatusLabel, settlementStatusLabel } from '@/types/order';
+import { matchLevelLabel as recMatchLevelLabel, matchLevelColor as recMatchLevelColor } from '@/types/recommend';
 import { formatDate, formatDateTime } from '@/utils/date';
 
 const OrderDetailPage: React.FC = () => {
@@ -258,6 +259,57 @@ const OrderDetailPage: React.FC = () => {
                   </View>
                 </View>
               ))}
+            </View>
+          </View>
+        )}
+
+        {order.recommendTrace && (
+          <View className={styles.infoCard}>
+            <Text className={styles.cardTitle}>推荐追溯信息</Text>
+            <View className={styles.traceHeader}>
+              <View className={styles.traceScoreBox}>
+                <Text className={styles.traceScoreValue}>{order.recommendTrace.score}</Text>
+                <Text className={styles.traceScoreLabel}>分</Text>
+              </View>
+              <View
+                className={styles.traceLevelTag}
+                style={{ backgroundColor: recMatchLevelColor[order.recommendTrace.matchLevel] }}
+              >
+                <Text style={{ color: '#fff' }}>{recMatchLevelLabel[order.recommendTrace.matchLevel]}</Text>
+              </View>
+              {order.recommendTrace.rank && (
+                <View className={styles.traceRank}>
+                  <Text className={styles.traceRankText}>推荐第 {order.recommendTrace.rank} 名</Text>
+                </View>
+              )}
+            </View>
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>需求吨位</Text>
+              <Text className={styles.infoValue}>{order.recommendTrace.requiredTonnage} 吨</Text>
+            </View>
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>首选机型</Text>
+              <Text className={styles.infoValue}>{order.recommendTrace.preferredType}</Text>
+            </View>
+            <View className={styles.traceWeights}>
+              <Text className={styles.traceWeightsLabel}>当时权重配置</Text>
+              <View className={styles.traceWeightList}>
+                {Object.entries(order.recommendTrace.weightConfig).map(([key, value]) => {
+                  const labels: Record<string, string> = {
+                    tonnage: '吨位',
+                    model: '机型',
+                    distance: '距离',
+                    price: '价格',
+                    availability: '可用性',
+                    rating: '评分'
+                  };
+                  return (
+                    <Text key={key} className={styles.traceWeightTag}>
+                      {labels[key]}: {value}%
+                    </Text>
+                  );
+                })}
+              </View>
             </View>
           </View>
         )}

@@ -4,7 +4,7 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 import OrderCard from '@/components/OrderCard';
-import type { Order } from '@/types/order';
+import type { Order, SettlementRecord } from '@/types/order';
 import { getOrders } from '@/store/index';
 
 const OrdersPage: React.FC = () => {
@@ -43,13 +43,31 @@ const OrdersPage: React.FC = () => {
       .filter(o => o.settlementStatus !== 'settled')
       .reduce((sum, o) => sum + (o.totalAmount - (o.settledAmount || 0)), 0);
 
+    const unsettledTotal = orders
+      .filter(o => o.settlementStatus === 'unsettled')
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+    const partialTotal = orders
+      .filter(o => o.settlementStatus === 'partial')
+      .reduce((sum, o) => sum + (o.totalAmount - (o.settledAmount || 0)), 0);
+    const settledTotal = orders
+      .filter(o => o.settlementStatus === 'settled')
+      .reduce((sum, o) => sum + (o.settledAmount || o.totalAmount), 0);
+
+    const allRecords = orders
+      .flatMap(o => (o.settlementRecords || []).map(r => ({ ...r, orderNo: o.orderNo })))
+      .sort((a, b) => b.payTime.localeCompare(a.payTime));
+
     return {
       total,
       pending,
       inProgress,
       completed,
       totalAmount,
-      unsettledAmount
+      unsettledAmount,
+      unsettledTotal,
+      partialTotal,
+      settledTotal,
+      recentRecords: allRecords.slice(0, 3)
     };
   }, [orders]);
 
@@ -58,6 +76,16 @@ const OrdersPage: React.FC = () => {
       return (amount / 10000).toFixed(1) + '万';
     }
     return amount.toString();
+  };
+
+  const settlementTypeLabel: Record<string, string> = {
+    deposit: '定金',
+    progress: '进度款',
+    final: '尾款'
+  };
+
+  const gotoOrder = (orderId: string) => {
+    Taro.navigateTo({ url: `/pages/order-detail/index?id=${orderId}` });
   };
 
   return (
@@ -101,7 +129,89 @@ const OrdersPage: React.FC = () => {
         </View>
 
         <View className={styles.summaryCard}>
-          <Text className={styles.summaryTitle}>本月结算概览</Text>
+          <Text className={styles.summaryTitle}>结算进度</Text>
+
+          <View className={styles.progressBarRow}>
+            {stats.totalAmount > 0 ? (
+              <>
+                <View className={styles.progressBar}>
+                  {stats.unsettledTotal > 0 && (
+                    <View
+                      className={styles.progressSegment}
+                      style={{
+                        width: `${(stats.unsettledTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        backgroundColor: '#F53F3F'
+                      }}
+                    />
+                  )}
+                  {stats.partialTotal > 0 && (
+                    <View
+                      className={styles.progressSegment}
+                      style={{
+                        width: `${(stats.partialTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        backgroundColor: '#FF7D00'
+                      }}
+                    />
+                  )}
+                  {stats.settledTotal > 0 && (
+                    <View
+                      className={styles.progressSegment}
+                      style={{
+                        width: `${(stats.settledTotal / stats.totalAmount * 100).toFixed(1)}%`,
+                        backgroundColor: '#00B42A'
+                      }}
+                    />
+                  )}
+                </View>
+                <View className={styles.progressLegend}>
+                  <View className={styles.legendItem}>
+                    <View className={styles.legendDot} style={{ backgroundColor: '#F53F3F' }} />
+                    <Text className={styles.legendText}>未结清 ¥{stats.unsettledTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.unsettledTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                  </View>
+                  <View className={styles.legendItem}>
+                    <View className={styles.legendDot} style={{ backgroundColor: '#FF7D00' }} />
+                    <Text className={styles.legendText}>部分结清 ¥{stats.partialTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.partialTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                  </View>
+                  <View className={styles.legendItem}>
+                    <View className={styles.legendDot} style={{ backgroundColor: '#00B42A' }} />
+                    <Text className={styles.legendText}>已结清 ¥{stats.settledTotal.toLocaleString()} ({stats.totalAmount > 0 ? (stats.settledTotal / stats.totalAmount * 100).toFixed(0) : 0}%)</Text>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <Text className={styles.emptyText}>暂无结算数据</Text>
+            )}
+          </View>
+
+          {stats.recentRecords.length > 0 && (
+            <View className={styles.recentRecords}>
+              <Text className={styles.recentTitle}>最近收款记录</Text>
+              {stats.recentRecords.map((record: SettlementRecord & { orderNo: string }) => (
+                <View
+                  key={record.id}
+                  className={styles.recentItem}
+                  onClick={() => gotoOrder(record.orderId)}
+                >
+                  <View className={styles.recentLeft}>
+                    <View className={styles.recentTypeTag}>
+                      <Text>{settlementTypeLabel[record.type] || '结算'}</Text>
+                    </View>
+                    <View>
+                      <Text className={styles.recentOrderNo}>{record.orderNo}</Text>
+                      <Text className={styles.recentTime}>{record.payTime}</Text>
+                    </View>
+                  </View>
+                  <View className={styles.recentRight}>
+                    <Text className={styles.recentAmount}>+¥{record.amount.toLocaleString()}</Text>
+                    {record.remark && (
+                      <Text className={styles.recentRemark}>{record.remark}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           <View className={styles.summaryRow}>
             <Text className={styles.summaryLabel}>订单总额</Text>
             <Text className={classnames(styles.summaryValue, styles.highlight)}>

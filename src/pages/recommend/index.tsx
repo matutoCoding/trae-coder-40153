@@ -102,7 +102,10 @@ const RecommendPage: React.FC = () => {
       `tonnage=${tonnage}`,
       `preferredType=${preferredType}`,
       `siteName=${encodeURIComponent(siteName)}`,
-      `siteAddress=${encodeURIComponent(siteAddress)}`
+      `siteAddress=${encodeURIComponent(siteAddress)}`,
+      `rank=${item.rank || 1}`,
+      `score=${item.score}`,
+      `matchLevel=${item.matchLevel}`
     ].join('&');
     Taro.navigateTo({
       url: `/pages/recommend-detail/index?${params}`

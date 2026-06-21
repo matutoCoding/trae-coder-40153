@@ -48,6 +48,9 @@
 
 .filterRow {
   margin-bottom: $spacing-md;
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
 }
 
 .filterBtn {
@@ -65,6 +68,23 @@
 
   &:active {
     background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.conflictBtn {
+  @include button-reset;
+  height: 64rpx;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-button;
+  background: rgba(245, 63, 63, 0.9);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  display: inline-flex;
+  align-items: center;
+
+  &:active {
+    opacity: 0.85;
   }
 }
 
@@ -383,6 +403,82 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.conflictScroll {
+  max-height: 70vh;
+}
+
+.conflictItem {
+  background: $color-bg-card;
+  border-radius: $radius-card;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  border: 1rpx solid $color-border;
+}
+
+.conflictHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.conflictTypeTag {
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  color: $color-text-white;
+  font-size: 22rpx;
+  font-weight: $font-weight-medium;
+}
+
+.conflictTitle {
+  flex: 1;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.conflictDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-sm;
+}
+
+.conflictMeta {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  margin-bottom: $spacing-sm;
+}
+
+.conflictMetaItem {
+  font-size: 24rpx;
+  color: $color-text-tertiary;
+}
+
+.conflictActions {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.conflictActionBtn {
+  @include button-reset;
+  height: 56rpx;
+  padding: 0 $spacing-md;
+  border-radius: $radius-button;
+  background: $color-primary-bg;
+  color: $color-primary;
+  font-size: 24rpx;
+  font-weight: $font-weight-medium;
+  display: inline-flex;
+  align-items: center;
 
   &:active {
     opacity: 0.9;

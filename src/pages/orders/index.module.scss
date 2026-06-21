@@ -165,3 +165,129 @@
     font-size: $font-size-md;
   }
 }
+
+.progressBarRow {
+  margin-bottom: $spacing-lg;
+}
+
+.progressBar {
+  display: flex;
+  height: 16rpx;
+  border-radius: 8rpx;
+  background: $color-divider;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+}
+
+.progressSegment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progressLegend {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendText {
+  font-size: 24rpx;
+  color: $color-text-secondary;
+}
+
+.recentRecords {
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.recentTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.recentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx dashed $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-page;
+  }
+}
+
+.recentLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  flex: 1;
+}
+
+.recentTypeTag {
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
+
+.recentOrderNo {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: block;
+}
+
+.recentTime {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+}
+
+.recentRight {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.recentAmount {
+  font-size: $font-size-sm;
+  color: $color-success;
+  font-weight: $font-weight-semibold;
+  display: block;
+}
+
+.recentRemark {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  display: block;
+  margin-top: 4rpx;
+  max-width: 300rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

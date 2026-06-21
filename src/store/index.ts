@@ -1,10 +1,11 @@
 import Taro from '@tarojs/taro';
 import dayjs from 'dayjs';
 import type { Crane } from '@/types/crane';
-import type { ScheduleItem } from '@/types/schedule';
-import type { Order, SettlementRecord } from '@/types/order';
+import type { ScheduleItem, ScheduleConflict } from '@/types/schedule';
+import type { Order, SettlementRecord, RecommendTrace } from '@/types/order';
 import type { WeightConfig } from '@/types/recommend';
 import { defaultWeightConfig } from '@/data/recommend';
+import { detectScheduleConflicts } from '@/utils/schedule';
 
 let _cranes: Crane[] = [];
 let _schedules: ScheduleItem[] = [];
@@ -75,47 +76,90 @@ export const addCrane = (data: {
   return crane;
 };
 
-export const mergeSchedulesForCrane = (craneId: string): ScheduleItem[] => {
-  const craneSchedules = _schedules.filter(s => s.craneId === craneId && s.status !== 'completed' && s.status !== 'cancelled');
+export const mergeSchedulesForCrane = (craneId: string, siteName?: string): ScheduleItem[] => {
+  let craneSchedules = _schedules.filter(s => s.craneId === craneId && s.status !== 'completed' && s.status !== 'cancelled');
   const otherSchedules = _schedules.filter(s => s.craneId !== craneId || s.status === 'completed' || s.status === 'cancelled');
 
-  const sorted = [...craneSchedules].sort((a, b) =>
-    dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
-  );
+  if (siteName) {
+    const sameSiteSchedules = craneSchedules.filter(s => s.siteName === siteName);
+    const otherSiteSchedules = craneSchedules.filter(s => s.siteName !== siteName);
 
-  const merged: ScheduleItem[] = [];
-  let current = sorted[0];
-
-  if (!current) {
-    _schedules = [...otherSchedules];
-    return _schedules;
-  }
-
-  for (let i = 1; i < sorted.length; i++) {
-    const next = sorted[i];
-    const canMerge =
-      current.siteName === next.siteName &&
-      current.siteAddress === next.siteAddress &&
-      current.status === next.status &&
-      dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') <= 24 &&
-      dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') >= 0;
-
-    if (canMerge) {
-      current = {
-        ...current,
-        endTime: next.endTime,
-        isMerged: true,
-        mergedFrom: [...(current.mergedFrom || [current.id]), next.id],
-        remark: `连续作业，已合并${(current.mergedFrom?.length || 1) + 1}个时段`
-      };
-    } else {
-      merged.push(current);
-      current = next;
+    if (sameSiteSchedules.length <= 1) {
+      return _schedules;
     }
-  }
-  merged.push(current);
 
-  _schedules = [...otherSchedules, ...merged];
+    const sorted = [...sameSiteSchedules].sort((a, b) =>
+      dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
+    );
+
+    const merged: ScheduleItem[] = [];
+    let current = sorted[0];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const next = sorted[i];
+      const canMerge =
+        current.siteName === next.siteName &&
+        current.siteAddress === next.siteAddress &&
+        current.status === next.status &&
+        dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') <= 24 &&
+        dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') >= 0;
+
+      if (canMerge) {
+        current = {
+          ...current,
+          endTime: next.endTime,
+          isMerged: true,
+          mergedFrom: [...(current.mergedFrom || [current.id]), next.id],
+          remark: `连续作业，已合并${(current.mergedFrom?.length || 1) + 1}个时段`
+        };
+      } else {
+        merged.push(current);
+        current = next;
+      }
+    }
+    merged.push(current);
+
+    _schedules = [...otherSchedules, ...otherSiteSchedules, ...merged];
+  } else {
+    const sorted = [...craneSchedules].sort((a, b) =>
+      dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()
+    );
+
+    const merged: ScheduleItem[] = [];
+    let current = sorted[0];
+
+    if (!current) {
+      _schedules = [...otherSchedules];
+      return _schedules;
+    }
+
+    for (let i = 1; i < sorted.length; i++) {
+      const next = sorted[i];
+      const canMerge =
+        current.siteName === next.siteName &&
+        current.siteAddress === next.siteAddress &&
+        current.status === next.status &&
+        dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') <= 24 &&
+        dayjs(next.startTime).diff(dayjs(current.endTime), 'hour') >= 0;
+
+      if (canMerge) {
+        current = {
+          ...current,
+          endTime: next.endTime,
+          isMerged: true,
+          mergedFrom: [...(current.mergedFrom || [current.id]), next.id],
+          remark: `连续作业，已合并${(current.mergedFrom?.length || 1) + 1}个时段`
+        };
+      } else {
+        merged.push(current);
+        current = next;
+      }
+    }
+    merged.push(current);
+
+    _schedules = [...otherSchedules, ...merged];
+  }
+
   return _schedules;
 };
 
@@ -175,6 +219,9 @@ export const createOrderFromMatch = (data: {
   weightConfig: WeightConfig;
   requiredTonnage: number;
   preferredType: string;
+  recommendScore: number;
+  matchLevel: 'perfect' | 'good' | 'normal' | 'low';
+  recommendRank?: number;
 }): { order: Order; schedule: ScheduleItem } => {
   _orderIdCounter++;
   const orderId = `order_match_${_orderIdCounter}`;
@@ -182,6 +229,15 @@ export const createOrderFromMatch = (data: {
 
   const totalAmount = data.days * data.dailyRate;
   const now = dayjs().format('YYYY-MM-DD HH:mm');
+
+  const recommendTrace: RecommendTrace = {
+    score: data.recommendScore,
+    matchLevel: data.matchLevel,
+    requiredTonnage: data.requiredTonnage,
+    preferredType: data.preferredType,
+    weightConfig: data.weightConfig,
+    rank: data.recommendRank
+  };
 
   const order: Order = {
     id: orderId,
@@ -202,7 +258,8 @@ export const createOrderFromMatch = (data: {
     remark: data.remark || '撮合订单',
     settlementStatus: 'unsettled',
     settlementRecords: [],
-    settledAmount: 0
+    settledAmount: 0,
+    recommendTrace
   };
 
   _orders.unshift(order);
@@ -324,4 +381,11 @@ export const saveWeightConfig = (config: WeightConfig): void => {
   } catch (e) {
     console.error('[Store] 保存权重配置失败:', e);
   }
+};
+
+export const getScheduleConflicts = (): ScheduleConflict[] => {
+  return detectScheduleConflicts(
+    _schedules.filter(s => s.status !== 'completed' && s.status !== 'cancelled'),
+    _cranes
+  );
 };

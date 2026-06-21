@@ -1,5 +1,15 @@
 import type { Crane } from './crane';
 import type { ScheduleItem } from './schedule';
+import type { WeightConfig } from './recommend';
+
+export interface RecommendTrace {
+  score: number;
+  matchLevel: 'perfect' | 'good' | 'normal' | 'low';
+  requiredTonnage: number;
+  preferredType: string;
+  weightConfig: WeightConfig;
+  rank?: number;
+}
 
 export interface Order {
   id: string;
@@ -26,6 +36,7 @@ export interface Order {
   settlementTime?: string;
   settlementRecords?: SettlementRecord[];
   settledAmount?: number;
+  recommendTrace?: RecommendTrace;
 }
 
 export type OrderStatus = 'pending' | 'confirmed' | 'inProgress' | 'completed' | 'cancelled';
